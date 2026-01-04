@@ -570,7 +570,6 @@ def calculate_prop_edge_score(player_name, prop_type, line, game_data, league="n
 def generate_all_props(games, league="nba"):
     """Generate comprehensive prop list with edge scores"""
     props_with_scores = []
-    
     prop_types = {
         "nba": [
             ("points", [15.5, 18.5, 21.5, 24.5, 27.5, 30.5, 33.5, 36.5]),
@@ -605,7 +604,6 @@ def generate_all_props(games, league="nba"):
             ("targets", [6, 8, 10, 12]),
         ]
     }
-    
     for game in games:
         opponent = game.get("home_team" if league == "nba" else "away_team", "")
         for player_name in (NBA_PLAYERS_DATA if league == "nba" else NFL_PLAYERS_DATA).keys():
@@ -626,7 +624,6 @@ def generate_all_props(games, league="nba"):
                             "time": game.get("time", ""),
                             "breakdown": breakdown
                         })
-    
     props_with_scores.sort(key=lambda x: x["edge_score"], reverse=True)
     return props_with_scores[:8]
                     
