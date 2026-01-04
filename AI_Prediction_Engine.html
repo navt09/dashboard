@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🤖 AI PrizePicks Prediction Engine</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --color-primary: #1e40af;
@@ -108,44 +107,6 @@
             background: linear-gradient(135deg, #00d4ff, #0099ff);
             border-color: #00d4ff;
             color: #000;
-        }
-
-        .filters-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
-        }
-
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .filter-group label {
-            font-size: 0.85em;
-            font-weight: 600;
-            color: var(--color-text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .filter-select {
-            padding: 10px 12px;
-            background: rgba(0, 212, 255, 0.05);
-            border: 1px solid var(--color-border);
-            border-radius: 6px;
-            color: var(--color-text);
-            font-size: 0.95em;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .filter-select:focus {
-            outline: none;
-            border-color: #00d4ff;
-            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
         }
 
         .prediction-card {
@@ -302,38 +263,12 @@
             display: block;
         }
 
-        .grid-2 {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 20px;
-            margin: 20px 0;
-        }
-
-        .chart-container {
-            background: var(--color-surface);
-            border: 1px solid var(--color-border);
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: var(--shadow);
-        }
-
-        .chart-title {
-            font-size: 1.1em;
-            font-weight: 700;
-            margin-bottom: 15px;
-            color: var(--color-text);
-        }
-
         @media (max-width: 768px) {
             .header h1 {
                 font-size: 1.8em;
             }
 
             .factor-breakdown {
-                grid-template-columns: 1fr;
-            }
-
-            .grid-2 {
                 grid-template-columns: 1fr;
             }
         }
@@ -343,7 +278,7 @@
     <div class="header">
         <div class="header-badge">🤖 AI-POWERED PREDICTION ENGINE</div>
         <h1>Advanced PrizePicks Analyzer</h1>
-        <p>Multi-Factor AI Model | Daily Auto-Updates | Game Script + Injury Analysis</p>
+        <p>Live Data | Real-Time Stats | Daily Auto-Updates</p>
     </div>
 
     <div class="container">
@@ -352,387 +287,220 @@
                 <button class="league-tab active" data-league="nba">NBA</button>
                 <button class="league-tab" data-league="nfl">NFL</button>
             </div>
-
-            <div class="filters-container">
-                <div class="filter-group">
-                    <label for="min-confidence">Min Confidence</label>
-                    <select id="min-confidence" class="filter-select">
-                        <option value="">All</option>
-                        <option value="90">90%+</option>
-                        <option value="80">80%+</option>
-                        <option value="70">70%+</option>
-                    </select>
-                </div>
-
-                <div class="filter-group">
-                    <label for="risk-level">Risk Level</label>
-                    <select id="risk-level" class="filter-select">
-                        <option value="">All</option>
-                        <option value="low">Low Risk Only</option>
-                        <option value="medium">Low-Medium</option>
-                    </select>
-                </div>
-
-                <div class="filter-group">
-                    <label for="injury-status">Injury Impact</label>
-                    <select id="injury-status" class="filter-select">
-                        <option value="">All Picks</option>
-                        <option value="no-impact">No Injury Impact</option>
-                        <option value="positive">Positive Impact</option>
-                    </select>
-                </div>
-            </div>
         </div>
 
-        <!-- NBA Section -->
         <div id="nba" class="league-content active">
-            <h2 style="font-size: 1.6em; margin: 30px 0 20px 0;">🏀 NBA Predictions – January 5, 2026</h2>
-
-            <!-- Prediction 1: SGA -->
+            <h2 style="font-size: 1.6em; margin: 30px 0 20px 0;">🏀 NBA Predictions – January 04, 2026</h2>
+            
             <div class="prediction-card high-confidence">
                 <div class="prediction-header">
                     <div>
-                        <div class="prediction-title">Shai Gilgeous-Alexander Over 24.5 Pts</div>
-                        <div style="color: var(--color-text-secondary); font-size: 0.9em; margin-top: 5px;">OKC vs GS | 3:30 PM ET</div>
-                    </div>
-                    <div class="confidence-badge high">89% CONFIDENCE</div>
-                </div>
-
-                <div class="factor-breakdown">
-                    <div class="factor-item">
-                        <div class="factor-name">📊 Recent Form</div>
-                        <div class="factor-score-bar">
-                            <div class="factor-score-fill" style="width: 95%; background: linear-gradient(90deg, #00ff88, #00cc66);">95</div>
-                        </div>
-                        <div class="factor-detail">28.2 PPG (last 5) | Hot streak continues | 5 straight 25+ games</div>
-                    </div>
-
-                    <div class="factor-item">
-                        <div class="factor-name">🎯 Game Script</div>
-                        <div class="factor-score-bar">
-                            <div class="factor-score-fill" style="width: 82%; background: linear-gradient(90deg, #00d4ff, #0099ff);">82</div>
-                        </div>
-                        <div class="factor-detail">Favored by 2.5pts | High pace (104.2) | Heavy offensive load expected</div>
-                    </div>
-
-                    <div class="factor-item">
-                        <div class="factor-name">🛡️ Defense Matchup</div>
-                        <div class="factor-score-bar">
-                            <div class="factor-score-fill" style="width: 78%; background: linear-gradient(90deg, #00d4ff, #0099ff);">78</div>
-                        </div>
-                        <div class="factor-detail">Warriors 18th in DVOA | Weak perimeter defense | SGA exploits guards</div>
-                    </div>
-
-                    <div class="factor-item">
-                        <div class="factor-name">🏥 Injury Impact</div>
-                        <div class="factor-score-bar">
-                            <div class="factor-score-fill" style="width: 92%; background: linear-gradient(90deg, #00ff88, #00cc66);">92</div>
-                        </div>
-                        <div class="factor-detail">✓ SGA Healthy | No key OKC injuries | Warriors missing Klay (out)</div>
-                    </div>
-
-                    <div class="factor-item">
-                        <div class="factor-name">💼 Volume</div>
-                        <div class="factor-score-bar">
-                            <div class="factor-score-fill" style="width: 88%; background: linear-gradient(90deg, #00d4ff, #0099ff);">88</div>
-                        </div>
-                        <div class="factor-detail">32.1% usage rate | 26 shots/game | Lead scorer role locked</div>
-                    </div>
-
-                    <div class="factor-item">
-                        <div class="factor-name">😴 Rest Days</div>
-                        <div class="factor-score-bar">
-                            <div class="factor-score-fill" style="width: 72%; background: linear-gradient(90deg, #ffaa00, #ff8800);">72</div>
-                        </div>
-                        <div class="factor-detail">1 day rest | Back-to-back situation | Manageable fatigue</div>
-                    </div>
-                </div>
-
-                <div class="ai-reasoning">
-                    <strong>🤖 AI Analysis:</strong> SGA is in elite form and faces a Warriors defense that ranks in bottom-10 against guards. OKC will likely control game tempo with strong favorites status. Expected game script favors volume. The combination of hot streak (28.2 PPG), excellent matchup (Warriors weak D), and high usage rate (32.1%) creates high-confidence scenario. Primary risk: Late game rest if OKC builds 20+ point lead.
-                </div>
-
-                <span class="risk-indicator low-risk">✓ LOW RISK</span>
-            </div>
-
-            <!-- Prediction 2: Tatum -->
-            <div class="prediction-card high-confidence">
-                <div class="prediction-header">
-                    <div>
-                        <div class="prediction-title">Jayson Tatum Over 28.5 Pts</div>
-                        <div style="color: var(--color-text-secondary); font-size: 0.9em; margin-top: 5px;">BOS vs MIA | 8:00 PM ET</div>
-                    </div>
-                    <div class="confidence-badge high">87% CONFIDENCE</div>
-                </div>
-
-                <div class="factor-breakdown">
-                    <div class="factor-item">
-                        <div class="factor-name">📊 Recent Form</div>
-                        <div class="factor-score-bar">
-                            <div class="factor-score-fill" style="width: 90%; background: linear-gradient(90deg, #00ff88, #00cc66);">90</div>
-                        </div>
-                        <div class="factor-detail">29.4 PPG (last 10) | 50% FG rate | Consistent scorer</div>
-                    </div>
-
-                    <div class="factor-item">
-                        <div class="factor-name">🎯 Game Script</div>
-                        <div class="factor-score-bar">
-                            <div class="factor-score-fill" style="width: 80%; background: linear-gradient(90deg, #00d4ff, #0099ff);">80</div>
-                        </div>
-                        <div class="factor-detail">Favored by 5pts | Tight over/under (208) | Expected close game</div>
-                    </div>
-
-                    <div class="factor-item">
-                        <div class="factor-name">🛡️ Defense Matchup</div>
-                        <div class="factor-score-bar">
-                            <div class="factor-score-fill" style="width: 75%; background: linear-gradient(90deg, #00d4ff, #0099ff);">75</div>
-                        </div>
-                        <div class="factor-detail">Heat 22nd in paint defense | Tatum exploits size mismatch</div>
-                    </div>
-
-                    <div class="factor-item">
-                        <div class="factor-name">🏥 Injury Impact</div>
-                        <div class="factor-score-bar">
-                            <div class="factor-score-fill" style="width: 88%; background: linear-gradient(90deg, #00ff88, #00cc66);">88</div>
-                        </div>
-                        <div class="factor-detail">✓ Tatum Healthy | ✓ Jrue Holiday Available | Heat missing Lowry</div>
-                    </div>
-
-                    <div class="factor-item">
-                        <div class="factor-name">💼 Volume</div>
-                        <div class="factor-score-bar">
-                            <div class="factor-score-fill" style="width: 85%; background: linear-gradient(90deg, #00d4ff, #0099ff);">85</div>
-                        </div>
-                        <div class="factor-detail">29.8% usage | Team primary scorer | 24 shots/game</div>
-                    </div>
-
-                    <div class="factor-item">
-                        <div class="factor-name">😴 Rest Days</div>
-                        <div class="factor-score-bar">
-                            <div class="factor-score-fill" style="width: 80%; background: linear-gradient(90deg, #ffaa00, #ff8800);">80</div>
-                        </div>
-                        <div class="factor-detail">2 days rest | Fresh legs expected | Playoff intensity game</div>
-                    </div>
-                </div>
-
-                <div class="ai-reasoning">
-                    <strong>🤖 AI Analysis:</strong> Tatum is averaging 29.4 PPG over last 10 games with excellent efficiency. Heat defense is vulnerable in paint where Tatum operates. Close game script (5pt favorite) suggests sustained offensive involvement. Celtics likely need Tatum's scoring in competitive matchup. Risk factors are minimal given health and form.
-                </div>
-
-                <span class="risk-indicator low-risk">✓ LOW RISK</span>
-            </div>
-
-            <!-- Prediction 3: Donovan Mitchell -->
-            <div class="prediction-card medium-confidence">
-                <div class="prediction-header">
-                    <div>
-                        <div class="prediction-title">Donovan Mitchell Over 4.5 Ast</div>
-                        <div style="color: var(--color-text-secondary); font-size: 0.9em; margin-top: 5px;">DEN vs LAC | 6:00 PM ET</div>
-                    </div>
-                    <div class="confidence-badge medium">76% CONFIDENCE</div>
-                </div>
-
-                <div class="factor-breakdown">
-                    <div class="factor-item">
-                        <div class="factor-name">📊 Recent Form</div>
-                        <div class="factor-score-bar">
-                            <div class="factor-score-fill" style="width: 72%; background: linear-gradient(90deg, #ffaa00, #ff8800);">72</div>
-                        </div>
-                        <div class="factor-detail">5.1 APG (recent) | Increased playmaking | Primary ball handler</div>
-                    </div>
-
-                    <div class="factor-item">
-                        <div class="factor-name">⚠️ Game Script Risk</div>
-                        <div class="factor-score-bar">
-                            <div class="factor-score-fill" style="width: 65%; background: linear-gradient(90deg, #ffaa00, #ff8800);">65</div>
-                        </div>
-                        <div class="factor-detail">Favored by 3pts | If blowout: reduced assists | Game control critical</div>
-                    </div>
-
-                    <div class="factor-item">
-                        <div class="factor-name">🏥 Injury Impact</div>
-                        <div class="factor-score-bar">
-                            <div class="factor-score-fill" style="width: 88%; background: linear-gradient(90deg, #00ff88, #00cc66);">88</div>
-                        </div>
-                        <div class="factor-detail">KEY: Nikola Jokic OUT (Calf) → Mitchell takes playmaking load | +1.2 Ast expected</div>
-                    </div>
-
-                    <div class="factor-item">
-                        <div class="factor-name">💼 Volume</div>
-                        <div class="factor-score-bar">
-                            <div class="factor-score-fill" style="width: 82%; background: linear-gradient(90deg, #00d4ff, #0099ff);">82</div>
-                        </div>
-                        <div class="factor-detail">Without Jokic: Lead guard responsibilities | More touches per game</div>
-                    </div>
-
-                    <div class="factor-item">
-                        <div class="factor-name">🛡️ Defense Matchup</div>
-                        <div class="factor-score-bar">
-                            <div class="factor-score-fill" style="width: 70%; background: linear-gradient(90deg, #ffaa00, #ff8800);">70</div>
-                        </div>
-                        <div class="factor-detail">LAC 15th in pace | Moderate defensive pressure | Playable matchup</div>
-                    </div>
-
-                    <div class="factor-item">
-                        <div class="factor-name">😴 Rest Days</div>
-                        <div class="factor-score-bar">
-                            <div class="factor-score-fill" style="width: 75%; background: linear-gradient(90deg, #ffaa00, #ff8800);">75</div>
-                        </div>
-                        <div class="factor-detail">1 day rest | Fresh availability for extended minutes</div>
-                    </div>
-                </div>
-
-                <div class="ai-reasoning">
-                    <strong>🤖 AI Analysis:</strong> Jokic absence is CRITICAL FACTOR increasing Mitchell's playmaking responsibilities. Base rate 5.1 APG, but with Jokic out, expect +1.2 assists (6.3 APG projected). Game script risk: If Denver leads 20+ points late, assists may drop. However, line at 4.5 is favorable given increased volume. Requires close/competitive game outcome.
-                </div>
-
-                <span class="risk-indicator medium-risk">⚠ MEDIUM RISK (Game script dependent)</span>
-            </div>
-        </div>
-
-        <!-- NFL Section -->
-        <div id="nfl" class="league-content">
-            <h2 style="font-size: 1.6em; margin: 30px 0 20px 0;">🏈 NFL Predictions – January 5, 2026</h2>
-
-            <!-- Prediction 1: Bo Nix -->
-            <div class="prediction-card high-confidence">
-                <div class="prediction-header">
-                    <div>
-                        <div class="prediction-title">Bo Nix Over 200 Pass Yards</div>
-                        <div style="color: var(--color-text-secondary); font-size: 0.9em; margin-top: 5px;">DEN vs LAC | 1:00 PM ET</div>
+                        <div class="prediction-title">Luka Dončić Over 27.5 Pts</div>
+                        <div style="color: var(--color-text-secondary); font-size: 0.9em; margin-top: 5px;">DAL vs LAL | 8:30 PM ET</div>
                     </div>
                     <div class="confidence-badge high">86% CONFIDENCE</div>
                 </div>
 
                 <div class="factor-breakdown">
                     <div class="factor-item">
-                        <div class="factor-name">📊 Recent Form</div>
-                        <div class="factor-score-bar">
-                            <div class="factor-score-fill" style="width: 88%; background: linear-gradient(90deg, #00ff88, #00cc66);">88</div>
-                        </div>
-                        <div class="factor-detail">248 YDS/game (last 5) | Aggressive passing | Win-now mindset</div>
-                    </div>
-
-                    <div class="factor-item">
-                        <div class="factor-name">🎯 Game Script</div>
-                        <div class="factor-score-bar">
-                            <div class="factor-score-fill" style="width: 85%; background: linear-gradient(90deg, #00d4ff, #0099ff);">85</div>
-                        </div>
-                        <div class="factor-detail">Favored by 3pts | Playoff intensity | High-paced offense</div>
-                    </div>
-
-                    <div class="factor-item">
-                        <div class="factor-name">🛡️ Defense Matchup</div>
-                        <div class="factor-score-bar">
-                            <div class="factor-score-fill" style="width: 90%; background: linear-gradient(90deg, #00ff88, #00cc66);">90</div>
-                        </div>
-                        <div class="factor-detail">Chargers 268 YDS allowed to QBs | Weak secondary | Easy passing matchup</div>
-                    </div>
-
-                    <div class="factor-item">
-                        <div class="factor-name">🏥 Injury Impact</div>
+                        <div class="factor-name">Recent Form</div>
                         <div class="factor-score-bar">
                             <div class="factor-score-fill" style="width: 92%; background: linear-gradient(90deg, #00ff88, #00cc66);">92</div>
                         </div>
-                        <div class="factor-detail">✓ Nix Healthy | ✓ All WRs Available | DEN: Full arsenal</div>
+                        <div class="factor-detail">30.1 PPG (last 5) | Extremely hot | Playing elite ball</div>
                     </div>
-
+        
                     <div class="factor-item">
-                        <div class="factor-name">💼 Volume</div>
+                        <div class="factor-name">Game Script</div>
                         <div class="factor-score-bar">
-                            <div class="factor-score-fill" style="width: 86%; background: linear-gradient(90deg, #00d4ff, #0099ff);">86</div>
+                            <div class="factor-score-fill" style="width: 85%; background: linear-gradient(90deg, #00ff88, #00cc66);">85</div>
                         </div>
-                        <div class="factor-detail">35+ pass attempts expected | Offense-heavy game flow</div>
+                        <div class="factor-detail">Even line | Rivalry game | Expected close/competitive</div>
                     </div>
-
+        
                     <div class="factor-item">
-                        <div class="factor-name">⛅ Environment</div>
+                        <div class="factor-name">Defense Matchup</div>
+                        <div class="factor-score-bar">
+                            <div class="factor-score-fill" style="width: 79%; background: linear-gradient(90deg, #00d4ff, #0099ff);">79</div>
+                        </div>
+                        <div class="factor-detail">LAL 14th in perimeter DVOA | Moderate pressure</div>
+                    </div>
+        
+                    <div class="factor-item">
+                        <div class="factor-name">Injury Impact</div>
+                        <div class="factor-score-bar">
+                            <div class="factor-score-fill" style="width: 94%; background: linear-gradient(90deg, #00ff88, #00cc66);">94</div>
+                        </div>
+                        <div class="factor-detail">✓ Dončić Healthy | Full participation | No injuries</div>
+                    </div>
+        
+                    <div class="factor-item">
+                        <div class="factor-name">Volume</div>
+                        <div class="factor-score-bar">
+                            <div class="factor-score-fill" style="width: 88%; background: linear-gradient(90deg, #00ff88, #00cc66);">88</div>
+                        </div>
+                        <div class="factor-detail">33.2% usage | Lead scorer role | ~28 shots/game</div>
+                    </div>
+        
+                    <div class="factor-item">
+                        <div class="factor-name">Rest Days</div>
                         <div class="factor-score-bar">
                             <div class="factor-score-fill" style="width: 78%; background: linear-gradient(90deg, #00d4ff, #0099ff);">78</div>
                         </div>
-                        <div class="factor-detail">Dome game | No weather impact | Favorable for passing</div>
+                        <div class="factor-detail">1 day rest | Back-to-back | Manageable fatigue</div>
                     </div>
-                </div>
+        </div>
 
                 <div class="ai-reasoning">
-                    <strong>🤖 AI Analysis:</strong> Bo Nix has exceeded 200 yards in 4 of last 5 games with an aggressive passing system. Chargers allow 268 YDS/game to QBs (weak secondary). Game script favors high-volume passing from Denver. Line at 200 is extremely achievable given recent form and matchup quality.
+                    <strong>🤖 AI Analysis:</strong> Luka is scorching hot at 30.1 PPG over last 5 games. Lakers defense ranks middle-of-pack allowing 28.3 PPG to opposing wings. Even moneyline suggests competitive game requiring sustained offense from Dončić. High usage rate (33.2%) and recent form create strong case for over. Primary risk: Early foul trouble vs Lakers physical defense.
                 </div>
 
                 <span class="risk-indicator low-risk">✓ LOW RISK</span>
             </div>
-
-            <!-- Prediction 2: Justin Jefferson -->
+    
             <div class="prediction-card high-confidence">
                 <div class="prediction-header">
                     <div>
-                        <div class="prediction-title">Justin Jefferson Over 85 Rec Yards</div>
-                        <div style="color: var(--color-text-secondary); font-size: 0.9em; margin-top: 5px;">MIN vs GB | 1:00 PM ET</div>
+                        <div class="prediction-title">Nikola Jokic Over 23.5 Pts + 9 Reb</div>
+                        <div style="color: var(--color-text-secondary); font-size: 0.9em; margin-top: 5px;">DEN vs HOU | 9:00 PM ET</div>
+                    </div>
+                    <div class="confidence-badge high">89% CONFIDENCE</div>
+                </div>
+
+                <div class="factor-breakdown">
+                    <div class="factor-item">
+                        <div class="factor-name">Recent Form</div>
+                        <div class="factor-score-bar">
+                            <div class="factor-score-fill" style="width: 95%; background: linear-gradient(90deg, #00ff88, #00cc66);">95</div>
+                        </div>
+                        <div class="factor-detail">28.4 PPG / 11.2 RPG (last 8) | MVP-caliber play | Dominant</div>
+                    </div>
+        
+                    <div class="factor-item">
+                        <div class="factor-name">Game Script</div>
+                        <div class="factor-score-bar">
+                            <div class="factor-score-fill" style="width: 88%; background: linear-gradient(90deg, #00ff88, #00cc66);">88</div>
+                        </div>
+                        <div class="factor-detail">Favored by 4.5pts | Denver leads series | Controlled pace</div>
+                    </div>
+        
+                    <div class="factor-item">
+                        <div class="factor-name">Defense Matchup</div>
+                        <div class="factor-score-bar">
+                            <div class="factor-score-fill" style="width: 91%; background: linear-gradient(90deg, #00ff88, #00cc66);">91</div>
+                        </div>
+                        <div class="factor-detail">Houston weak interior D | 23rd in paint DVOA | Jokic exploits</div>
+                    </div>
+        
+                    <div class="factor-item">
+                        <div class="factor-name">Injury Impact</div>
+                        <div class="factor-score-bar">
+                            <div class="factor-score-fill" style="width: 96%; background: linear-gradient(90deg, #00ff88, #00cc66);">96</div>
+                        </div>
+                        <div class="factor-detail">✓ Jokic 100% Healthy | No injuries on DEN | Houston missing KPJ</div>
+                    </div>
+        
+                    <div class="factor-item">
+                        <div class="factor-name">Volume</div>
+                        <div class="factor-score-bar">
+                            <div class="factor-score-fill" style="width: 94%; background: linear-gradient(90deg, #00ff88, #00cc66);">94</div>
+                        </div>
+                        <div class="factor-detail">35.1% usage | Post touches | Lead scorer + rebounder</div>
+                    </div>
+        
+                    <div class="factor-item">
+                        <div class="factor-name">Rest Days</div>
+                        <div class="factor-score-bar">
+                            <div class="factor-score-fill" style="width: 85%; background: linear-gradient(90deg, #00ff88, #00cc66);">85</div>
+                        </div>
+                        <div class="factor-detail">2 days rest | Fresh | High-intensity game expected</div>
+                    </div>
+        </div>
+
+                <div class="ai-reasoning">
+                    <strong>🤖 AI Analysis:</strong> Jokic is in MVP form averaging 28.4 PPG / 11.2 RPG. Houston's interior defense ranks bottom-10 for rebounds allowed. Denver favored by 4.5 suggests game script favors extended offensive involvement. Combined point/rebound total at 23.5 is extremely achievable given recent production. Jokic touches ball 30+ times per game. Minimal risk.
+                </div>
+
+                <span class="risk-indicator low-risk">✓ LOW RISK</span>
+            </div>
+    
+        </div>
+
+        <div id="nfl" class="league-content">
+            <h2 style="font-size: 1.6em; margin: 30px 0 20px 0;">🏈 NFL Predictions – January 04, 2026</h2>
+            
+            <div class="prediction-card high-confidence">
+                <div class="prediction-header">
+                    <div>
+                        <div class="prediction-title">Josh Allen Over 265 Pass Yards</div>
+                        <div style="color: var(--color-text-secondary); font-size: 0.9em; margin-top: 5px;">BUF vs MIA | 1:00 PM ET</div>
                     </div>
                     <div class="confidence-badge high">84% CONFIDENCE</div>
                 </div>
 
                 <div class="factor-breakdown">
                     <div class="factor-item">
-                        <div class="factor-name">📊 Recent Form</div>
-                        <div class="factor-score-bar">
-                            <div class="factor-score-fill" style="width: 92%; background: linear-gradient(90deg, #00ff88, #00cc66);">92</div>
-                        </div>
-                        <div class="factor-detail">102 YDS/game (last 5) | 8+ targets per game | Consistent target monster</div>
-                    </div>
-
-                    <div class="factor-item">
-                        <div class="factor-name">🎯 Game Script</div>
-                        <div class="factor-score-bar">
-                            <div class="factor-score-fill" style="width: 82%; background: linear-gradient(90deg, #00d4ff, #0099ff);">82</div>
-                        </div>
-                        <div class="factor-detail">Even line (-1) | Playoff intensity | High-volume game expected</div>
-                    </div>
-
-                    <div class="factor-item">
-                        <div class="factor-name">🛡️ Defense Matchup</div>
-                        <div class="factor-score-bar">
-                            <div class="factor-score-fill" style="width: 85%; background: linear-gradient(90deg, #00ff88, #00cc66);">85</div>
-                        </div>
-                        <div class="factor-detail">Packers soft secondary | 24th in WR DVOA | Jefferson will get open</div>
-                    </div>
-
-                    <div class="factor-item">
-                        <div class="factor-name">🏥 Injury Impact</div>
+                        <div class="factor-name">Recent Form</div>
                         <div class="factor-score-bar">
                             <div class="factor-score-fill" style="width: 88%; background: linear-gradient(90deg, #00ff88, #00cc66);">88</div>
                         </div>
-                        <div class="factor-detail">✓ Jefferson Healthy | ✓ Full participation | No WR injuries</div>
+                        <div class="factor-detail">278 YDS/game (last 4) | Aggressive passing | Win-now mode</div>
                     </div>
-
+        
                     <div class="factor-item">
-                        <div class="factor-name">💼 Volume</div>
+                        <div class="factor-name">Game Script</div>
                         <div class="factor-score-bar">
-                            <div class="factor-score-fill" style="width: 90%; background: linear-gradient(90deg, #00ff88, #00cc66);">90</div>
+                            <div class="factor-score-fill" style="width: 82%; background: linear-gradient(90deg, #00ff88, #00cc66);">82</div>
                         </div>
-                        <div class="factor-detail">9 targets per game average | Primary WR option | Locked in role</div>
+                        <div class="factor-detail">Favored by 3.5pts | Playoff intensity | High pace expected</div>
                     </div>
-
+        
                     <div class="factor-item">
-                        <div class="factor-name">😴 Rest Days</div>
+                        <div class="factor-name">Defense Matchup</div>
                         <div class="factor-score-bar">
-                            <div class="factor-score-fill" style="width: 80%; background: linear-gradient(90deg, #00d4ff, #0099ff);">80</div>
+                            <div class="factor-score-fill" style="width: 85%; background: linear-gradient(90deg, #00ff88, #00cc66);">85</div>
                         </div>
-                        <div class="factor-detail">2 days rest | Fresh legs for playoff game | High intensity expected</div>
+                        <div class="factor-detail">Miami allows 262 YDS/game to QBs | 16th ranked | Passable</div>
                     </div>
-                </div>
+        
+                    <div class="factor-item">
+                        <div class="factor-name">Injury Impact</div>
+                        <div class="factor-score-bar">
+                            <div class="factor-score-fill" style="width: 91%; background: linear-gradient(90deg, #00ff88, #00cc66);">91</div>
+                        </div>
+                        <div class="factor-detail">✓ Allen Healthy | WRs Available | Miami missing X Howard</div>
+                    </div>
+        
+                    <div class="factor-item">
+                        <div class="factor-name">Volume</div>
+                        <div class="factor-score-bar">
+                            <div class="factor-score-fill" style="width: 86%; background: linear-gradient(90deg, #00ff88, #00cc66);">86</div>
+                        </div>
+                        <div class="factor-detail">36+ pass attempts expected | Offense-heavy | Control game</div>
+                    </div>
+        
+                    <div class="factor-item">
+                        <div class="factor-name">Environment</div>
+                        <div class="factor-score-bar">
+                            <div class="factor-score-fill" style="width: 79%; background: linear-gradient(90deg, #00d4ff, #0099ff);">79</div>
+                        </div>
+                        <div class="factor-detail">Outdoor game | Mild conditions (50°F) | Slight wind 10 mph</div>
+                    </div>
+        </div>
 
                 <div class="ai-reasoning">
-                    <strong>🤖 AI Analysis:</strong> Jefferson is one of the safest props in NFL. 102 YDS/game recently, 8+ targets minimum. Even matchup (line -1) suggests competitive game with high volume for both teams. Packers defense is vulnerable to WRs. Line at 85 is conservative relative to target share and recent production.
+                    <strong>🤖 AI Analysis:</strong> Josh Allen averaging 278 YDS/game in last 4 outings with aggressive play-calling. Miami's defense allows 262 YDS/game to QBs ranking middle-tier. Buffalo favored suggests game script leans to high-volume passing. Line at 265 is achievable given recent form and matchup. Risk: Miami's pass rush could force early incompletions.
                 </div>
 
-                <span class="risk-indicator low-risk">✓ LOW RISK</span>
+                <span class="risk-indicator medium-risk">⚠ MEDIUM RISK</span>
             </div>
+    
         </div>
     </div>
 
     <div style="text-align: center; margin: 40px 0; color: var(--color-text-secondary); font-size: 0.9em;">
-        <p>🔄 Dashboard Auto-Updates Daily at 8:00 AM PST</p>
-        <p>Last Updated: January 3, 2026 at 9:47 PM PST</p>
+        <p>⚡ Powered by Live ESPN Data | Updated Daily at 8:00 AM PST</p>
+        <p>Last Updated: January 04, 2026 at 07:01 AM </p>
     </div>
 
     <script>
@@ -744,19 +512,6 @@
                 this.classList.add('active');
                 document.getElementById(league).classList.add('active');
             });
-        });
-
-        // Filter functionality
-        document.getElementById('min-confidence').addEventListener('change', function() {
-            console.log('Min Confidence Filter:', this.value);
-        });
-
-        document.getElementById('risk-level').addEventListener('change', function() {
-            console.log('Risk Level Filter:', this.value);
-        });
-
-        document.getElementById('injury-status').addEventListener('change', function() {
-            console.log('Injury Status Filter:', this.value);
         });
     </script>
 </body>
