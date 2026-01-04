@@ -627,7 +627,7 @@ def generate_all_props(games, league="nba"):
                         league
                     )
                     
-                    if edge_score >= 72:  # Only highest probability props
+                     if edge_score >= 65:
                         props_with_scores.append({
                             "player": player_name,
                             "prop_type": prop_type,
