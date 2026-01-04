@@ -1051,7 +1051,8 @@ def main():
     """Generate dashboard and write to file"""
     print("🚀 Starting Advanced PrizePicks Analysis...")
     print(f"⏰ Timestamp: {dt.now().strftime('%Y-%m-%d %H:%M:%S UTC')}")
-    print("📊 Evaluating 500+ props across 20+ factors...")
+    print("📊 Fetching live injury data from ESPN...")
+    print("📊 Evaluating all props across 20+ factors...")
     
     html_content = generate_html()
     
