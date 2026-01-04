@@ -571,13 +571,6 @@ def generate_all_props(games, league="nba"):
     """Generate comprehensive prop list with edge scores"""
     props_with_scores = []
     
-    # Build list of injured "Out" players to exclude
-    injured_out = set()
-    for team_injuries in TEAM_INJURIES.get(league, {}).values():
-        for inj in team_injuries:
-            if inj.get('status') == 'Out':
-                injured_out.add(inj.get('player'))
-    
     prop_types = {
         "nba": [
             ("points", [15.5, 18.5, 21.5, 24.5, 27.5, 30.5, 33.5, 36.5]),
@@ -623,7 +616,6 @@ def generate_all_props(games, league="nba"):
                         {"opponent": opponent, "team": game.get("away_team", "")},
                         league
                     )
-
                     if edge_score >= 65:
                         props_with_scores.append({
                             "player": player_name,
@@ -635,9 +627,8 @@ def generate_all_props(games, league="nba"):
                             "breakdown": breakdown
                         })
     
-    # Sort by edge score descending
     props_with_scores.sort(key=lambda x: x["edge_score"], reverse=True)
-    return props_with_scores[:5]  # Top 5 highest probability picks only
+    return props_with_scores[:8]
                     
                     if edge_score >= 65:
                         props_with_scores.append({
