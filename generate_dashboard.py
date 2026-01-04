@@ -642,7 +642,7 @@ def generate_all_props(games, league="nba"):
     props_with_scores.sort(key=lambda x: x["edge_score"], reverse=True)
     return props_with_scores[:5]  # Top 5 highest probability picks only
                     
-                    if edge_score >= 60:  # Lower threshold = MORE props shown
+                    if edge_score >= 65:
                         props_with_scores.append({
                             "player": player_name,
                             "prop_type": prop_type,
