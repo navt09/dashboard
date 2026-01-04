@@ -626,17 +626,6 @@ def generate_all_props(games, league="nba"):
                         })
     props_with_scores.sort(key=lambda x: x["edge_score"], reverse=True)
     return props_with_scores[:8]
-                    
-                    if edge_score >= 65:
-                        props_with_scores.append({
-                            "player": player_name,
-                            "prop_type": prop_type,
-                            "line": line,
-                            "edge_score": edge_score,
-                            "matchup": game.get("matchup", ""),
-                            "time": game.get("time", ""),
-                            "breakdown": breakdown
-                        })
     
     # Sort by edge score descending
     props_with_scores.sort(key=lambda x: x["edge_score"], reverse=True)
