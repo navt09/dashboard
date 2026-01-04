@@ -574,6 +574,8 @@ def generate_all_props(games, league="nba"):
     for game in games:
         opponent = game.get("home_team" if league == "nba" else "away_team", "")
         for player_name in (NBA_PLAYERS_DATA if league == "nba" else NFL_PLAYERS_DATA).keys():
+            if player_name in injured_out:
+                continue
             for prop_type, lines in prop_types.get(league, []):
                 for line in lines:
                     edge_score, breakdown = calculate_prop_edge_score(
