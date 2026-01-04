@@ -526,8 +526,15 @@ def calculate_prop_edge_score(player_name, prop_type, line, game_data, league="n
     return max(0, min(100, score)), factors_breakdown
 
 def generate_all_props(games, league="nba"):
-    """Generate comprehensive prop list with edge scores - ALL PROPS"""
+    """Generate comprehensive prop list with edge scores"""
     props_with_scores = []
+    
+    # Build list of injured "Out" players to exclude
+    injured_out = set()
+    for team_injuries in TEAM_INJURIES.get(league, {}).values():
+        for inj in team_injuries:
+            if inj.get('status') == 'Out':
+                injured_out.add(inj.get('player'))
     
     prop_types = {
         "nba": [
