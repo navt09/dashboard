@@ -1,0 +1,32 @@
+name: Daily Dashboard Update
+
+on:
+  schedule:
+    - cron: '0 13 * * *'  # 8 AM PST daily
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Run dashboard generator
+        run: python generate_dashboard.py
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add AI_Prediction_Engine.html
+          git commit -m "Update: Daily dashboard $(date)" || echo "No changes"
+          git push
