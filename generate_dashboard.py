@@ -162,17 +162,59 @@ OPPONENT_DEFENSE = {
     }
 }
 
-TEAM_INJURIES = {
-    "nba": {
-        "LAL": [{"player": "Anthony Davis", "status": "Out", "impact": 0.20}, {"player": "LeBron James", "status": "Day-to-Day", "impact": 0.15}],
-        "GS": [{"player": "Klay Thompson", "status": "Out", "impact": 0.08}],
-        "HOU": [{"player": "K.J. Martin Jr.", "status": "Out", "impact": 0.05}],
-    },
-    "nfl": {
-        "MIA": [{"player": "Xavier Howard", "status": "Out", "impact": 0.12}],
-        "KC": [{"player": "Patrick Mahomes", "status": "Out", "impact": 0.25}],
-    }
-}
+def fetch_injuries_from_espn():
+    """Fetch real-time injury data from ESPN API"""
+    injuries = {"nba": {}, "nfl": {}}
+    
+    try:
+        # Fetch NBA injuries
+        nba_url = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams"
+        nba_resp = requests.get(nba_url, timeout=10)
+        nba_data = nba_resp.json()
+        
+        for team in nba_data.get('teams', []):
+            team_abbr = team.get('abbreviation', '')
+            team_injuries = []
+            for player in team.get('athletes', []):
+                if player.get('injuryStatus'):
+                    status = player['injuryStatus'].get('description', 'Out')
+                    if status == 'Out':
+                        team_injuries.append({
+                            'player': player.get('displayName', ''),
+                            'status': 'Out',
+                            'impact': 0.15
+                        })
+            if team_injuries:
+                injuries['nba'][team_abbr] = team_injuries
+    except Exception as e:
+        print(f"⚠️ Could not fetch NBA injuries: {e}")
+    
+    try:
+        # Fetch NFL injuries
+        nfl_url = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams"
+        nfl_resp = requests.get(nfl_url, timeout=10)
+        nfl_data = nfl_resp.json()
+        
+        for team in nfl_data.get('teams', []):
+            team_abbr = team.get('abbreviation', '')
+            team_injuries = []
+            for player in team.get('athletes', []):
+                if player.get('injuryStatus'):
+                    status = player['injuryStatus'].get('description', 'Out')
+                    if status == 'Out':
+                        team_injuries.append({
+                            'player': player.get('displayName', ''),
+                            'status': 'Out',
+                            'impact': 0.15
+                        })
+            if team_injuries:
+                injuries['nfl'][team_abbr] = team_injuries
+    except Exception as e:
+        print(f"⚠️ Could not fetch NFL injuries: {e}")
+    
+    return injuries
+
+TEAM_INJURIES = fetch_injuries_from_espn()
 
 REFEREE_TENDENCIES = {
     "nba": {"tight_whistle": 0.8, "ft_rate_boost": 1.15, "foul_calls_per_game": 28},
