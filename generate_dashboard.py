@@ -614,7 +614,8 @@ def generate_all_props(games, league="nba"):
     }
     
     for game in games:
-        opponent = game.get("home_team" if league == "nba" else "away_team", "")
+        home_team = game.get("home_team", "")
+        away_team = game.get("away_team", "")
         for player_name in (NBA_PLAYERS_DATA if league == "nba" else NFL_PLAYERS_DATA).keys():
             if player_name in injured_out:
                 continue
@@ -622,9 +623,24 @@ def generate_all_props(games, league="nba"):
                 for line in lines:
                     edge_score, breakdown = calculate_prop_edge_score(
                         player_name, prop_type, line,
-                        {"opponent": opponent, "team": game.get("away_team", "")},
+                        {"opponent": home_team, "team": away_team},
                         league
                     )
+                    
+                    if edge_score >= 72:  # Only highest probability props
+                        props_with_scores.append({
+                            "player": player_name,
+                            "prop_type": prop_type,
+                            "line": line,
+                            "edge_score": edge_score,
+                            "matchup": game.get("matchup", ""),
+                            "time": game.get("time", ""),
+                            "breakdown": breakdown
+                        })
+    
+    # Sort by edge score descending
+    props_with_scores.sort(key=lambda x: x["edge_score"], reverse=True)
+    return props_with_scores[:5]  # Top 5 highest probability picks only
                     
                     if edge_score >= 60:  # Lower threshold = MORE props shown
                         props_with_scores.append({
