@@ -1051,8 +1051,12 @@ def main():
     """Generate dashboard and write to file"""
     print("🚀 Starting Advanced PrizePicks Analysis...")
     print(f"⏰ Timestamp: {dt.now().strftime('%Y-%m-%d %H:%M:%S UTC')}")
-    print("📊 Fetching live injury data from ESPN...")
+    print("📊 Fetching latest injuries from API...")
     print("📊 Evaluating all props across 20+ factors...")
+    
+    nba_inj_count = sum(len(v) for v in TEAM_INJURIES.get('nba', {}).values())
+    nfl_inj_count = sum(len(v) for v in TEAM_INJURIES.get('nfl', {}).values())
+    print(f"✓ Injuries loaded: NBA={nba_inj_count}, NFL={nfl_inj_count}")
     
     html_content = generate_html()
     
