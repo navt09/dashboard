@@ -24,6 +24,8 @@ jobs:
         run: pip install requests
 
       - name: Generate dashboard
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
         run: python generate_dashboard.py
 
       - name: Commit and push
