@@ -596,23 +596,40 @@ def parse_main_lines(event_odds_json: dict, home_team: str, away_team: str):
 # TEAM ABBR LOOKUP FOR OPPONENT_DEFENSE TABLES
 # =============================================================================
 
-def abbreviate_team(team_name: str, league: str) -> str:
+# -----------------------------------------------------------------------------
+# TEAM ABBR RESOLUTION (ESPN -> OPPONENT_DEFENSE)
+# -----------------------------------------------------------------------------
+
+NBA_ABBR_ALIASES = {
+    # ESPN uses GSW, your table uses GS
+    "GSW": "GS",
+}
+
+NFL_ABBR_ALIASES = {
+    # Add if needed later
+}
+
+def get_team_abbr_map(league: str):
     """
-    Minimal mapping.
-    Expand this for better coverage. If unknown, returns "".
+    Returns dict: ESPN displayName -> ESPN abbreviation
     """
-    nba_map = {
-        "Los Angeles Lakers": "LAL",
-        "Golden State Warriors": "GS",
-        "Houston Rockets": "HOU",
-        "Denver Nuggets": "DEN",
-    }
-    nfl_map = {
-        "Miami Dolphins": "MIA",
-        "Buffalo Bills": "BUF",
-        "Kansas City Chiefs": "KC",
-    }
-    return (nba_map if league == "nba" else nfl_map).get(team_name, "")
+    tm = espn_team_map(league, use_cache=True)
+    return {name: meta.get("abbr", "") for name, meta in tm.items()}
+
+def normalize_team_abbr(league: str, abbr: str) -> str:
+    if not abbr:
+        return ""
+    abbr = abbr.strip().upper()
+    if league == "nba":
+        return NBA_ABBR_ALIASES.get(abbr, abbr)
+    return NFL_ABBR_ALIASES.get(abbr, abbr)
+
+def abbreviate_team(team_name: str, league: str, name_to_abbr: dict) -> str:
+    """
+    Resolves team displayName -> ESPN abbr -> normalized abbr
+    """
+    espn_abbr = name_to_abbr.get(team_name, "")
+    return normalize_team_abbr(league, espn_abbr)
 
 # =============================================================================
 # SCRIPT / BLOWOUT / GARBAGE TIME FACTORS
