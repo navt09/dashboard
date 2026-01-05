@@ -765,21 +765,25 @@ def generate_prediction_card(prop):
     return html
 
 def generate_html(nba_props, nfl_props):
+    """Generate complete dashboard HTML (placeholder-replace style, no f-string braces issues)."""
     now = dt.now()
     today_date = now.strftime("%B %d, %Y")
     last_updated = now.strftime("%B %d, %Y at %I:%M %p")
 
-    nba_cards = "".join(generate_prediction_card(p) for p in nba_props) or '<p style="color: var(--color-text-secondary);">No high-edge NBA props found.</p>'
-    nfl_cards = "".join(generate_prediction_card(p) for p in nfl_props) or '<p style="color: var(--color-text-secondary);">No high-edge NFL props found.</p>'
+    nba_cards = "".join(generate_prediction_card(p) for p in nba_props) \
+        if nba_props else '<p style="color: var(--color-text-secondary);">No high-edge NBA props found.</p>'
 
-    return f"""<!DOCTYPE html>
+    nfl_cards = "".join(generate_prediction_card(p) for p in nfl_props) \
+        if nfl_props else '<p style="color: var(--color-text-secondary);">No high-edge NFL props found.</p>'
+
+    html = """<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>🤖 Advanced Prop Analyzer</title>
 <style>
-:root {{
+:root {
     --color-primary: #1e40af;
     --color-secondary: #0f766e;
     --color-bg: #0a0e27;
@@ -788,190 +792,191 @@ def generate_html(nba_props, nfl_props):
     --color-text: #f1f5f9;
     --color-text-secondary: #cbd5e1;
     --shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-}}
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-body {{
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: linear-gradient(135deg, var(--color-bg) 0%, #0f1729 100%);
     color: var(--color-text);
     padding: 20px;
     min-height: 100vh;
-}}
-.header {{
-    text-align:center;
-    margin-bottom:40px;
-    border-bottom:2px solid var(--color-border);
-    padding-bottom:20px;
-}}
-.header h1 {{
-    font-size:2.4em;
-    margin-bottom:10px;
+}
+.header {
+    text-align: center;
+    margin-bottom: 40px;
+    border-bottom: 2px solid var(--color-border);
+    padding-bottom: 20px;
+}
+.header h1 {
+    font-size: 2.4em;
+    margin-bottom: 10px;
     background: linear-gradient(135deg, #00d4ff, #0099ff);
-    -webkit-background-clip:text;
-    -webkit-text-fill-color:transparent;
-}}
-.header-badge {{
-    display:inline-block;
-    background: rgba(0,212,255,0.2);
-    border:1px solid #00d4ff;
-    padding:8px 16px;
-    border-radius:20px;
-    font-size:0.9em;
-    color:#00d4ff;
-    margin-bottom:10px;
-    font-weight:600;
-}}
-.methodology {{
-    background: rgba(0,212,255,0.05);
-    border:1px solid rgba(0,212,255,0.2);
-    padding:15px;
-    border-radius:8px;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.header-badge {
+    display: inline-block;
+    background: rgba(0, 212, 255, 0.2);
+    border: 1px solid #00d4ff;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9em;
+    color: #00d4ff;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+.methodology {
+    background: rgba(0, 212, 255, 0.05);
+    border: 1px solid rgba(0, 212, 255, 0.2);
+    padding: 15px;
+    border-radius: 8px;
     color: var(--color-text-secondary);
-    font-size:0.85em;
-    margin-top:10px;
-    line-height:1.6;
-}}
-.container {{ max-width: 1600px; margin: 0 auto; }}
-.controls-section {{
+    font-size: 0.85em;
+    margin-top: 10px;
+    line-height: 1.6;
+}
+.container { max-width: 1600px; margin: 0 auto; }
+.controls-section {
     background: var(--color-surface);
-    border:1px solid var(--color-border);
-    border-radius:12px;
-    padding:20px;
-    margin-bottom:30px;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 30px;
     box-shadow: var(--shadow);
-}}
-.league-tabs {{ display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; }}
-.league-tab {{
-    padding:10px 20px;
-    border:2px solid var(--color-border);
-    background:transparent;
+}
+.league-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+.league-tab {
+    padding: 10px 20px;
+    border: 2px solid var(--color-border);
+    background: transparent;
     color: var(--color-text);
-    cursor:pointer;
-    border-radius:8px;
-    font-weight:600;
+    cursor: pointer;
+    border-radius: 8px;
+    font-weight: 600;
     transition: all 0.3s ease;
-}}
-.league-tab:hover {{
-    border-color:#00d4ff;
-    background: rgba(0,212,255,0.1);
-}}
-.league-tab.active {{
+}
+.league-tab:hover {
+    border-color: #00d4ff;
+    background: rgba(0, 212, 255, 0.1);
+}
+.league-tab.active {
     background: linear-gradient(135deg, #00d4ff, #0099ff);
-    border-color:#00d4ff;
-    color:#000;
-}}
-.league-content {{ display:none; }}
-.league-content.active {{ display:block; }}
+    border-color: #00d4ff;
+    color: #000;
+}
+.league-content { display: none; }
+.league-content.active { display: block; }
 
-.prediction-card {{
+.prediction-card {
     background: var(--color-surface);
-    border:2px solid var(--color-border);
-    border-radius:12px;
-    padding:20px;
-    margin-bottom:20px;
+    border: 2px solid var(--color-border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
     transition: all 0.3s ease;
-}}
-.prediction-card:hover {{
-    border-color:#00d4ff;
-    box-shadow: 0 8px 24px rgba(0,212,255,0.1);
+}
+.prediction-card:hover {
+    border-color: #00d4ff;
+    box-shadow: 0 8px 24px rgba(0, 212, 255, 0.1);
     transform: translateY(-2px);
-}}
-.prediction-card.high-confidence {{ border-left:5px solid #00ff88; }}
-.prediction-card.medium-confidence {{ border-left:5px solid #ffaa00; }}
-.prediction-card.low-confidence {{ border-left:5px solid #ff6b6b; }}
+}
+.prediction-card.high-confidence { border-left: 5px solid #00ff88; }
+.prediction-card.medium-confidence { border-left: 5px solid #ffaa00; }
+.prediction-card.low-confidence { border-left: 5px solid #ff6b6b; }
 
-.prediction-header {{
-    display:flex;
-    justify-content:space-between;
-    align-items:start;
-    margin-bottom:15px;
-}}
-.prediction-title {{ font-size:1.25em; font-weight:700; }}
-.confidence-badge {{
-    display:inline-block;
-    padding:8px 16px;
-    border-radius:20px;
-    font-size:0.9em;
-    font-weight:700;
-    color:white;
-}}
-.confidence-badge.high {{ background: linear-gradient(135deg, #00ff88, #00cc66); }}
-.confidence-badge.medium {{ background: linear-gradient(135deg, #ffaa00, #ff8800); }}
-.confidence-badge.low {{ background: linear-gradient(135deg, #ff6b6b, #cc0000); }}
+.prediction-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 15px;
+}
+.prediction-title { font-size: 1.25em; font-weight: 700; }
+.confidence-badge {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9em;
+    font-weight: 700;
+    color: white;
+}
+.confidence-badge.high { background: linear-gradient(135deg, #00ff88, #00cc66); }
+.confidence-badge.medium { background: linear-gradient(135deg, #ffaa00, #ff8800); }
+.confidence-badge.low { background: linear-gradient(135deg, #ff6b6b, #cc0000); }
 
-.factor-breakdown {{
-    display:grid;
+.factor-breakdown {
+    display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap:12px;
+    gap: 12px;
     margin: 15px 0;
-}}
-.factor-item {{
-    background: rgba(0,212,255,0.05);
-    border:1px solid rgba(0,212,255,0.2);
-    padding:12px;
-    border-radius:6px;
-}}
-.factor-name {{
-    font-size:0.85em;
-    font-weight:600;
-    color:#00d4ff;
-    text-transform:uppercase;
-    letter-spacing:0.5px;
-    margin-bottom:6px;
-}}
-.factor-score-bar {{
-    background: rgba(0,0,0,0.3);
-    height:20px;
-    border-radius:3px;
-    overflow:hidden;
-}}
-.factor-score-fill {{
-    height:100%;
-    width:0%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:0.7em;
-    font-weight:700;
-    color:#000;
-}}
-.ai-reasoning {{
-    background: rgba(0,212,255,0.05);
-    border-left:3px solid #00d4ff;
-    padding:12px;
-    border-radius:6px;
+}
+.factor-item {
+    background: rgba(0, 212, 255, 0.05);
+    border: 1px solid rgba(0, 212, 255, 0.2);
+    padding: 12px;
+    border-radius: 6px;
+}
+.factor-name {
+    font-size: 0.85em;
+    font-weight: 600;
+    color: #00d4ff;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+}
+.factor-score-bar {
+    background: rgba(0, 0, 0, 0.3);
+    height: 20px;
+    border-radius: 3px;
+    overflow: hidden;
+}
+.factor-score-fill {
+    height: 100%;
+    width: 0%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7em;
+    font-weight: 700;
+    color: #000;
+}
+.ai-reasoning {
+    background: rgba(0, 212, 255, 0.05);
+    border-left: 3px solid #00d4ff;
+    padding: 12px;
+    border-radius: 6px;
     margin: 12px 0;
-    font-size:0.9em;
-    line-height:1.5;
+    font-size: 0.9em;
+    line-height: 1.5;
     color: var(--color-text-secondary);
-}}
-.risk-indicator {{
-    display:inline-block;
-    padding:6px 12px;
-    border-radius:4px;
-    font-size:0.8em;
-    font-weight:600;
-    margin-top:10px;
-    background: rgba(0,255,136,0.15);
-    color:#00ff88;
-}}
-@media (max-width:768px) {{
-    .header h1 {{ font-size:1.8em; }}
-    .factor-breakdown {{ grid-template-columns:1fr; }}
-}}
+}
+.risk-indicator {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    font-weight: 600;
+    margin-top: 10px;
+    background: rgba(0, 255, 136, 0.15);
+    color: #00ff88;
+}
+@media (max-width: 768px) {
+    .header h1 { font-size: 1.8em; }
+    .factor-breakdown { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 <body>
+
 <div class="header">
     <div class="header-badge">🤖 REAL LINES + EDGE MODEL</div>
     <h1>Advanced Prop Analyzer</h1>
     <p style="color: var(--color-text-secondary); font-size: 1.05em;">Over + Under picks | Injury filtering | Best edges only</p>
     <p style="color: var(--color-text-secondary); font-size: 0.95em; margin-top: 8px;">
-        📊 {len(nba_props)} NBA Picks | 🏈 {len(nfl_props)} NFL Picks
+        📊 __NBA_COUNT__ NBA Picks | 🏈 __NFL_COUNT__ NFL Picks
     </p>
     <div class="methodology">
-        Uses The Odds API player prop markets (real sportsbook lines) accessed per-event via /events/{{eventId}}/odds, then applies your rules-based context model. :contentReference[oaicite:5]{index=5}
-        Injuries are pulled from ESPN team injury feeds and filtered out.
+        Real sportsbook lines + your rules-based context model. Injuries pulled from ESPN and filtered out.
     </div>
 </div>
 
@@ -984,36 +989,49 @@ body {{
     </div>
 
     <div id="nba" class="league-content active">
-        <h2 style="font-size: 1.5em; margin: 30px 0 20px 0;">NBA Top Plays – {today_date}</h2>
-        {nba_cards}
+        <h2 style="font-size: 1.5em; margin: 30px 0 20px 0;">NBA Top Plays – __TODAY_DATE__</h2>
+        __NBA_CARDS__
     </div>
 
     <div id="nfl" class="league-content">
-        <h2 style="font-size: 1.5em; margin: 30px 0 20px 0;">NFL Top Plays – {today_date}</h2>
-        {nfl_cards}
+        <h2 style="font-size: 1.5em; margin: 30px 0 20px 0;">NFL Top Plays – __TODAY_DATE__</h2>
+        __NFL_CARDS__
     </div>
 </div>
 
-<div style="text-align:center; margin: 40px 0; color: var(--color-text-secondary); font-size:0.9em;">
+<div style="text-align: center; margin: 40px 0; color: var(--color-text-secondary); font-size: 0.9em;">
     <p>⚡ Updated Daily at 8:00 AM PST</p>
-    <p>Last Updated: {last_updated}</p>
-    <p style="font-size:0.85em; margin-top: 15px;">Disclaimer: informational only.</p>
+    <p>Last Updated: __LAST_UPDATED__</p>
+    <p style="font-size: 0.85em; margin-top: 15px;">Disclaimer: informational only.</p>
 </div>
 
 <script>
-document.querySelectorAll('.league-tab').forEach(tab => {{
-    tab.addEventListener('click', function() {{
+document.querySelectorAll('.league-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
         const league = this.getAttribute('data-league');
         document.querySelectorAll('.league-tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.league-content').forEach(c => c.classList.remove('active'));
         this.classList.add('active');
         document.getElementById(league).classList.add('active');
-    }});
-}});
+    });
+});
 </script>
+
 </body>
 </html>
 """
+
+    # Replace placeholders
+    html = (html
+            .replace("__NBA_CARDS__", nba_cards)
+            .replace("__NFL_CARDS__", nfl_cards)
+            .replace("__TODAY_DATE__", today_date)
+            .replace("__LAST_UPDATED__", last_updated)
+            .replace("__NBA_COUNT__", str(len(nba_props)))
+            .replace("__NFL_COUNT__", str(len(nfl_props)))
+            )
+
+    return html
 
 # =============================================================================
 # MAIN
@@ -1030,17 +1048,21 @@ def main():
     (nba_inj, nba_details), (nfl_inj, nfl_details) = build_injury_sets()
     print(f"✓ Injured loaded: NBA={len(nba_inj)}, NFL={len(nfl_inj)}")
 
-    print("📡 Pulling NBA props (real lines)...")
+    print("🏀 Pulling NBA props (real lines)...")
     nba_top = generate_top_props_for_league("nba", nba_inj)
 
-    print("📡 Pulling NFL props (real lines)...")
+    print("🏈 Pulling NFL props (real lines)...")
     nfl_top = generate_top_props_for_league("nfl", nfl_inj)
 
+    # ✅ This must match the function name you pasted
     html = generate_html(nba_top, nfl_top)
-    with open("AI_Prediction_Engine.html", "w", encoding="utf-8") as f:
+
+    # ✅ This must match what your workflow commits
+    out_file = "AI_Prediction_Engine.html"
+    with open(out_file, "w", encoding="utf-8") as f:
         f.write(html)
 
-    print("✅ Done. Wrote AI_Prediction_Engine.html")
+    print(f"✅ Done. Wrote {out_file}")
 
 if __name__ == "__main__":
     main()
