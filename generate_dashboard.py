@@ -990,6 +990,7 @@ def generate_top_props_for_league(league: str, keep_top: int = 8):
     # Build roster mapping for TODAY'S teams
     print(f"👥 Building {league.upper()} roster index (today's teams only)...")
     team_map = espn_team_map(league, use_cache=True)
+    name_to_abbr = get_team_abbr_map(league)
     # Note: we pass team display names; ESPN map is keyed by displayName
     roster_index, player_to_team, player_to_athlete_id = build_today_roster_index(
         league,
@@ -1011,8 +1012,9 @@ def generate_top_props_for_league(league: str, keep_top: int = 8):
         # Team abbreviations for opponent-defense tables + internal matching
         # (If abbreviate_team doesn't know the team, we still can do rosters + matchups correctly,
         #  but OPPONENT_DEFENSE boosts won't apply.)
-        home_abbr = abbreviate_team(g["home_team"], league)
-        away_abbr = abbreviate_team(g["away_team"], league)
+        home_abbr = abbreviate_team(g["home_team"], league, name_to_abbr)
+        away_abbr = abbreviate_team(g["away_team"], league, name_to_abbr)
+
 
         # Pull main lines (spreads/totals) once per event
         try:
