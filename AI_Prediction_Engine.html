@@ -6,8 +6,6 @@
 <title>🤖 Advanced Prop Analyzer</title>
 <style>
 :root {
-    --color-primary: #1e40af;
-    --color-secondary: #0f766e;
     --color-bg: #0a0e27;
     --color-surface: #1a1f3a;
     --color-border: #2d3748;
@@ -191,14 +189,17 @@ body {
 <body>
 
 <div class="header">
-    <div class="header-badge">🤖 REAL LINES + EDGE MODEL</div>
+    <div class="header-badge">🤖 ALL PLAYERS + REAL LINES</div>
     <h1>Advanced Prop Analyzer</h1>
-    <p style="color: var(--color-text-secondary); font-size: 1.05em;">Over + Under picks | Injury filtering | Best edges only</p>
+    <p style="color: var(--color-text-secondary); font-size: 1.05em;">
+        Scores Over + Under | Filters Injuries | Fixes Matchups | Script-Aware
+    </p>
     <p style="color: var(--color-text-secondary); font-size: 0.95em; margin-top: 8px;">
-        📊 8 NBA Picks | 🏈 4 NFL Picks
+        📊 4 NBA Picks | 🏈 0 NFL Picks
     </p>
     <div class="methodology">
-        Real sportsbook lines + your rules-based context model. Injuries pulled from ESPN and filtered out.
+        Picks are built from real sportsbook prop markets (Odds API), assigned to the correct game using ESPN rosters,
+        filtered for OUT/IR/INACTIVE players via ESPN injuries, then scored using matchup + injury + script + blowout factors.
     </div>
 </div>
 
@@ -216,20 +217,20 @@ body {
         <div class="prediction-card high-confidence">
             <div class="prediction-header">
                 <div>
-                    <div class="prediction-title">Giannis Antetokounmpo Rebounds OVER 10.5</div>
+                    <div class="prediction-title">Luka Doncic Assists UNDER 8.5</div>
                     <div style="color: var(--color-text-secondary); font-size: 0.9em; margin-top: 5px;">
-                        Milwaukee Bucks @ Sacramento Kings | 02:10 AM UTC
+                        Memphis Grizzlies @ Los Angeles Lakers | 02:40 AM UTC
                     </div>
                     <div style="color: var(--color-text-secondary); font-size: 0.85em; margin-top: 6px;">
-                        Model proj: 14.45
+                        Model proj: 6.50
                     </div>
                 </div>
-                <div class="confidence-badge high">95% EDGE</div>
+                <div class="confidence-badge high">81% EDGE</div>
             </div>
 
             <div class="factor-breakdown">
             <div class="factor-item">
-                <div class="factor-name">Usage Rate</div>
+                <div class="factor-name">Usage</div>
                 <div class="factor-score-bar">
                     <div class="factor-score-fill" style="width: 100%; background: linear-gradient(90deg, #00ff88, #00cc66);">100</div>
                 </div>
@@ -243,60 +244,60 @@ body {
             </div>
         
             <div class="factor-item">
-                <div class="factor-name">Proj vs Line</div>
+                <div class="factor-name">Blowout Risk</div>
                 <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 81%; background: linear-gradient(90deg, #00ff88, #00cc66);">81</div>
+                    <div class="factor-score-fill" style="width: 72%; background: linear-gradient(90deg, #00d4ff, #0099ff);">72</div>
                 </div>
             </div>
         
             <div class="factor-item">
-                <div class="factor-name">Rest Days</div>
+                <div class="factor-name">Rest</div>
                 <div class="factor-score-bar">
                     <div class="factor-score-fill" style="width: 70%; background: linear-gradient(90deg, #00d4ff, #0099ff);">70</div>
                 </div>
             </div>
         
             <div class="factor-item">
-                <div class="factor-name">Back-to-Back</div>
+                <div class="factor-name">Favorite</div>
                 <div class="factor-score-bar">
                     <div class="factor-score-fill" style="width: 66%; background: linear-gradient(90deg, #00d4ff, #0099ff);">66</div>
                 </div>
             </div>
         
             <div class="factor-item">
-                <div class="factor-name">Load Mgmt</div>
+                <div class="factor-name">Proj vs Line</div>
                 <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 66%; background: linear-gradient(90deg, #00d4ff, #0099ff);">66</div>
+                    <div class="factor-score-fill" style="width: 34%; background: linear-gradient(90deg, #ffaa00, #ff8800);">34</div>
                 </div>
             </div>
         </div>
 
             <div class="ai-reasoning">
-                <strong>📊 Real Line + Model Edge:</strong>
-                Line pulled from sportsbook prop markets. Pick side (Over/Under) chosen by model projection vs the real line,
-                then adjusted by your context factors (usage, efficiency, pace, rest, etc.).
+                <strong>📊 Real Line + Script-Aware Edge:</strong>
+                Uses real sportsbook prop lines and chooses Over/Under based on projection vs line,
+                adjusted for matchup, injuries, blowout risk, favorite/underdog usage, and (NFL) run/pass script.
             </div>
 
-            <span class="risk-indicator low-risk">Real-line selection</span>
+            <span class="risk-indicator low-risk">Best-value selection</span>
         </div>
     
-        <div class="prediction-card high-confidence">
+        <div class="prediction-card medium-confidence">
             <div class="prediction-header">
                 <div>
-                    <div class="prediction-title">Giannis Antetokounmpo Reb Ast OVER 15.5</div>
+                    <div class="prediction-title">Luka Doncic 3 Pointers UNDER 3.5</div>
                     <div style="color: var(--color-text-secondary); font-size: 0.9em; margin-top: 5px;">
-                        Milwaukee Bucks @ Sacramento Kings | 02:10 AM UTC
+                        Memphis Grizzlies @ Los Angeles Lakers | 02:40 AM UTC
                     </div>
                     <div style="color: var(--color-text-secondary); font-size: 0.85em; margin-top: 6px;">
-                        Model proj: 20.54
+                        Model proj: 2.39
                     </div>
                 </div>
-                <div class="confidence-badge high">93% EDGE</div>
+                <div class="confidence-badge medium">71% EDGE</div>
             </div>
 
             <div class="factor-breakdown">
             <div class="factor-item">
-                <div class="factor-name">Usage Rate</div>
+                <div class="factor-name">Usage</div>
                 <div class="factor-score-bar">
                     <div class="factor-score-fill" style="width: 100%; background: linear-gradient(90deg, #00ff88, #00cc66);">100</div>
                 </div>
@@ -310,44 +311,111 @@ body {
             </div>
         
             <div class="factor-item">
+                <div class="factor-name">Blowout Risk</div>
+                <div class="factor-score-bar">
+                    <div class="factor-score-fill" style="width: 72%; background: linear-gradient(90deg, #00d4ff, #0099ff);">72</div>
+                </div>
+            </div>
+        
+            <div class="factor-item">
+                <div class="factor-name">Rest</div>
+                <div class="factor-score-bar">
+                    <div class="factor-score-fill" style="width: 70%; background: linear-gradient(90deg, #00d4ff, #0099ff);">70</div>
+                </div>
+            </div>
+        
+            <div class="factor-item">
+                <div class="factor-name">Favorite</div>
+                <div class="factor-score-bar">
+                    <div class="factor-score-fill" style="width: 66%; background: linear-gradient(90deg, #00d4ff, #0099ff);">66</div>
+                </div>
+            </div>
+        
+            <div class="factor-item">
                 <div class="factor-name">Proj vs Line</div>
+                <div class="factor-score-bar">
+                    <div class="factor-score-fill" style="width: 41%; background: linear-gradient(90deg, #ffaa00, #ff8800);">41</div>
+                </div>
+            </div>
+        </div>
+
+            <div class="ai-reasoning">
+                <strong>📊 Real Line + Script-Aware Edge:</strong>
+                Uses real sportsbook prop lines and chooses Over/Under based on projection vs line,
+                adjusted for matchup, injuries, blowout risk, favorite/underdog usage, and (NFL) run/pass script.
+            </div>
+
+            <span class="risk-indicator medium-risk">Best-value selection</span>
+        </div>
+    
+        <div class="prediction-card low-confidence">
+            <div class="prediction-header">
+                <div>
+                    <div class="prediction-title">LeBron James Reb Ast OVER 12.5</div>
+                    <div style="color: var(--color-text-secondary); font-size: 0.9em; margin-top: 5px;">
+                        Memphis Grizzlies @ Los Angeles Lakers | 02:40 AM UTC
+                    </div>
+                    <div style="color: var(--color-text-secondary); font-size: 0.85em; margin-top: 6px;">
+                        Model proj: 14.34
+                    </div>
+                </div>
+                <div class="confidence-badge low">68% EDGE</div>
+            </div>
+
+            <div class="factor-breakdown">
+            <div class="factor-item">
+                <div class="factor-name">Usage</div>
+                <div class="factor-score-bar">
+                    <div class="factor-score-fill" style="width: 100%; background: linear-gradient(90deg, #00ff88, #00cc66);">100</div>
+                </div>
+            </div>
+        
+            <div class="factor-item">
+                <div class="factor-name">Efficiency</div>
+                <div class="factor-score-bar">
+                    <div class="factor-score-fill" style="width: 100%; background: linear-gradient(90deg, #00ff88, #00cc66);">100</div>
+                </div>
+            </div>
+        
+            <div class="factor-item">
+                <div class="factor-name">Rest</div>
                 <div class="factor-score-bar">
                     <div class="factor-score-fill" style="width: 90%; background: linear-gradient(90deg, #00ff88, #00cc66);">90</div>
                 </div>
             </div>
         
             <div class="factor-item">
-                <div class="factor-name">Rest Days</div>
+                <div class="factor-name">Blowout Risk</div>
                 <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 70%; background: linear-gradient(90deg, #00d4ff, #0099ff);">70</div>
+                    <div class="factor-score-fill" style="width: 72%; background: linear-gradient(90deg, #00d4ff, #0099ff);">72</div>
                 </div>
             </div>
         
             <div class="factor-item">
-                <div class="factor-name">Back-to-Back</div>
+                <div class="factor-name">Favorite</div>
                 <div class="factor-score-bar">
                     <div class="factor-score-fill" style="width: 66%; background: linear-gradient(90deg, #00d4ff, #0099ff);">66</div>
                 </div>
             </div>
         
             <div class="factor-item">
-                <div class="factor-name">Load Mgmt</div>
+                <div class="factor-name">Proj vs Line</div>
                 <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 66%; background: linear-gradient(90deg, #00d4ff, #0099ff);">66</div>
+                    <div class="factor-score-fill" style="width: 64%; background: linear-gradient(90deg, #00d4ff, #0099ff);">64</div>
                 </div>
             </div>
         </div>
 
             <div class="ai-reasoning">
-                <strong>📊 Real Line + Model Edge:</strong>
-                Line pulled from sportsbook prop markets. Pick side (Over/Under) chosen by model projection vs the real line,
-                then adjusted by your context factors (usage, efficiency, pace, rest, etc.).
+                <strong>📊 Real Line + Script-Aware Edge:</strong>
+                Uses real sportsbook prop lines and chooses Over/Under based on projection vs line,
+                adjusted for matchup, injuries, blowout risk, favorite/underdog usage, and (NFL) run/pass script.
             </div>
 
-            <span class="risk-indicator low-risk">Real-line selection</span>
+            <span class="risk-indicator medium-risk">Best-value selection</span>
         </div>
     
-        <div class="prediction-card high-confidence">
+        <div class="prediction-card low-confidence">
             <div class="prediction-header">
                 <div>
                     <div class="prediction-title">Luka Doncic Rebounds OVER 7.5</div>
@@ -355,24 +423,17 @@ body {
                         Memphis Grizzlies @ Los Angeles Lakers | 02:40 AM UTC
                     </div>
                     <div style="color: var(--color-text-secondary); font-size: 0.85em; margin-top: 6px;">
-                        Model proj: 9.88
+                        Model proj: 8.70
                     </div>
                 </div>
-                <div class="confidence-badge high">91% EDGE</div>
+                <div class="confidence-badge low">67% EDGE</div>
             </div>
 
             <div class="factor-breakdown">
             <div class="factor-item">
-                <div class="factor-name">Usage Rate</div>
+                <div class="factor-name">Usage</div>
                 <div class="factor-score-bar">
                     <div class="factor-score-fill" style="width: 100%; background: linear-gradient(90deg, #00ff88, #00cc66);">100</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Load Mgmt</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 0%; background: linear-gradient(90deg, #ffaa00, #ff8800);">0</div>
                 </div>
             </div>
         
@@ -384,349 +445,21 @@ body {
             </div>
         
             <div class="factor-item">
-                <div class="factor-name">Rest Days</div>
+                <div class="factor-name">Blowout Risk</div>
+                <div class="factor-score-bar">
+                    <div class="factor-score-fill" style="width: 72%; background: linear-gradient(90deg, #00d4ff, #0099ff);">72</div>
+                </div>
+            </div>
+        
+            <div class="factor-item">
+                <div class="factor-name">Rest</div>
                 <div class="factor-score-bar">
                     <div class="factor-score-fill" style="width: 70%; background: linear-gradient(90deg, #00d4ff, #0099ff);">70</div>
                 </div>
             </div>
         
             <div class="factor-item">
-                <div class="factor-name">Proj vs Line</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 69%; background: linear-gradient(90deg, #00d4ff, #0099ff);">69</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Back-to-Back</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 66%; background: linear-gradient(90deg, #00d4ff, #0099ff);">66</div>
-                </div>
-            </div>
-        </div>
-
-            <div class="ai-reasoning">
-                <strong>📊 Real Line + Model Edge:</strong>
-                Line pulled from sportsbook prop markets. Pick side (Over/Under) chosen by model projection vs the real line,
-                then adjusted by your context factors (usage, efficiency, pace, rest, etc.).
-            </div>
-
-            <span class="risk-indicator low-risk">Real-line selection</span>
-        </div>
-    
-        <div class="prediction-card high-confidence">
-            <div class="prediction-header">
-                <div>
-                    <div class="prediction-title">Giannis Antetokounmpo Pts Reb OVER 39.5</div>
-                    <div style="color: var(--color-text-secondary); font-size: 0.9em; margin-top: 5px;">
-                        Milwaukee Bucks @ Sacramento Kings | 02:10 AM UTC
-                    </div>
-                    <div style="color: var(--color-text-secondary); font-size: 0.85em; margin-top: 6px;">
-                        Model proj: 49.66
-                    </div>
-                </div>
-                <div class="confidence-badge high">89% EDGE</div>
-            </div>
-
-            <div class="factor-breakdown">
-            <div class="factor-item">
-                <div class="factor-name">Proj vs Line</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 100%; background: linear-gradient(90deg, #00ff88, #00cc66);">100</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Usage Rate</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 100%; background: linear-gradient(90deg, #00ff88, #00cc66);">100</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Efficiency</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 100%; background: linear-gradient(90deg, #00ff88, #00cc66);">100</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Rest Days</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 70%; background: linear-gradient(90deg, #00d4ff, #0099ff);">70</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Back-to-Back</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 66%; background: linear-gradient(90deg, #00d4ff, #0099ff);">66</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Load Mgmt</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 66%; background: linear-gradient(90deg, #00d4ff, #0099ff);">66</div>
-                </div>
-            </div>
-        </div>
-
-            <div class="ai-reasoning">
-                <strong>📊 Real Line + Model Edge:</strong>
-                Line pulled from sportsbook prop markets. Pick side (Over/Under) chosen by model projection vs the real line,
-                then adjusted by your context factors (usage, efficiency, pace, rest, etc.).
-            </div>
-
-            <span class="risk-indicator low-risk">Real-line selection</span>
-        </div>
-    
-        <div class="prediction-card high-confidence">
-            <div class="prediction-header">
-                <div>
-                    <div class="prediction-title">Anthony Edwards Points UNDER 30.5</div>
-                    <div style="color: var(--color-text-secondary); font-size: 0.9em; margin-top: 5px;">
-                        Minnesota Timberwolves @ Washington Wizards | 11:10 PM UTC
-                    </div>
-                    <div style="color: var(--color-text-secondary); font-size: 0.85em; margin-top: 6px;">
-                        Model proj: 22.66
-                    </div>
-                </div>
-                <div class="confidence-badge high">89% EDGE</div>
-            </div>
-
-            <div class="factor-breakdown">
-            <div class="factor-item">
-                <div class="factor-name">Usage Rate</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 100%; background: linear-gradient(90deg, #00ff88, #00cc66);">100</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Proj vs Line</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 0%; background: linear-gradient(90deg, #ffaa00, #ff8800);">0</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Efficiency</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 100%; background: linear-gradient(90deg, #00ff88, #00cc66);">100</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Back-to-Back</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 2%; background: linear-gradient(90deg, #ffaa00, #ff8800);">2</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Load Mgmt</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 66%; background: linear-gradient(90deg, #00d4ff, #0099ff);">66</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Rest Days</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 50%; background: linear-gradient(90deg, #00d4ff, #0099ff);">50</div>
-                </div>
-            </div>
-        </div>
-
-            <div class="ai-reasoning">
-                <strong>📊 Real Line + Model Edge:</strong>
-                Line pulled from sportsbook prop markets. Pick side (Over/Under) chosen by model projection vs the real line,
-                then adjusted by your context factors (usage, efficiency, pace, rest, etc.).
-            </div>
-
-            <span class="risk-indicator low-risk">Real-line selection</span>
-        </div>
-    
-        <div class="prediction-card high-confidence">
-            <div class="prediction-header">
-                <div>
-                    <div class="prediction-title">Anthony Edwards Rebounds UNDER 6.5</div>
-                    <div style="color: var(--color-text-secondary); font-size: 0.9em; margin-top: 5px;">
-                        Minnesota Timberwolves @ Washington Wizards | 11:10 PM UTC
-                    </div>
-                    <div style="color: var(--color-text-secondary); font-size: 0.85em; margin-top: 6px;">
-                        Model proj: 4.42
-                    </div>
-                </div>
-                <div class="confidence-badge high">88% EDGE</div>
-            </div>
-
-            <div class="factor-breakdown">
-            <div class="factor-item">
-                <div class="factor-name">Usage Rate</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 100%; background: linear-gradient(90deg, #00ff88, #00cc66);">100</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Efficiency</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 100%; background: linear-gradient(90deg, #00ff88, #00cc66);">100</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Back-to-Back</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 2%; background: linear-gradient(90deg, #ffaa00, #ff8800);">2</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Proj vs Line</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 33%; background: linear-gradient(90deg, #ffaa00, #ff8800);">33</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Load Mgmt</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 66%; background: linear-gradient(90deg, #00d4ff, #0099ff);">66</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Rest Days</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 50%; background: linear-gradient(90deg, #00d4ff, #0099ff);">50</div>
-                </div>
-            </div>
-        </div>
-
-            <div class="ai-reasoning">
-                <strong>📊 Real Line + Model Edge:</strong>
-                Line pulled from sportsbook prop markets. Pick side (Over/Under) chosen by model projection vs the real line,
-                then adjusted by your context factors (usage, efficiency, pace, rest, etc.).
-            </div>
-
-            <span class="risk-indicator low-risk">Real-line selection</span>
-        </div>
-    
-        <div class="prediction-card high-confidence">
-            <div class="prediction-header">
-                <div>
-                    <div class="prediction-title">Shai Gilgeous-Alexander Reb Ast OVER 10.5</div>
-                    <div style="color: var(--color-text-secondary); font-size: 0.9em; margin-top: 5px;">
-                        Oklahoma City Thunder @ Phoenix Suns | 01:10 AM UTC
-                    </div>
-                    <div style="color: var(--color-text-secondary); font-size: 0.85em; margin-top: 6px;">
-                        Model proj: 13.09
-                    </div>
-                </div>
-                <div class="confidence-badge high">88% EDGE</div>
-            </div>
-
-            <div class="factor-breakdown">
-            <div class="factor-item">
-                <div class="factor-name">Usage Rate</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 100%; background: linear-gradient(90deg, #00ff88, #00cc66);">100</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Efficiency</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 100%; background: linear-gradient(90deg, #00ff88, #00cc66);">100</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Proj vs Line</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 70%; background: linear-gradient(90deg, #00d4ff, #0099ff);">70</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Rest Days</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 70%; background: linear-gradient(90deg, #00d4ff, #0099ff);">70</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Back-to-Back</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 66%; background: linear-gradient(90deg, #00d4ff, #0099ff);">66</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Load Mgmt</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 66%; background: linear-gradient(90deg, #00d4ff, #0099ff);">66</div>
-                </div>
-            </div>
-        </div>
-
-            <div class="ai-reasoning">
-                <strong>📊 Real Line + Model Edge:</strong>
-                Line pulled from sportsbook prop markets. Pick side (Over/Under) chosen by model projection vs the real line,
-                then adjusted by your context factors (usage, efficiency, pace, rest, etc.).
-            </div>
-
-            <span class="risk-indicator low-risk">Real-line selection</span>
-        </div>
-    
-        <div class="prediction-card high-confidence">
-            <div class="prediction-header">
-                <div>
-                    <div class="prediction-title">LeBron James Rebounds OVER 6.0</div>
-                    <div style="color: var(--color-text-secondary); font-size: 0.9em; margin-top: 5px;">
-                        Memphis Grizzlies @ Los Angeles Lakers | 02:40 AM UTC
-                    </div>
-                    <div style="color: var(--color-text-secondary); font-size: 0.85em; margin-top: 6px;">
-                        Model proj: 7.93
-                    </div>
-                </div>
-                <div class="confidence-badge high">87% EDGE</div>
-            </div>
-
-            <div class="factor-breakdown">
-            <div class="factor-item">
-                <div class="factor-name">Usage Rate</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 100%; background: linear-gradient(90deg, #00ff88, #00cc66);">100</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Load Mgmt</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 0%; background: linear-gradient(90deg, #ffaa00, #ff8800);">0</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Efficiency</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 100%; background: linear-gradient(90deg, #00ff88, #00cc66);">100</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Rest Days</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 90%; background: linear-gradient(90deg, #00ff88, #00cc66);">90</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Back-to-Back</div>
+                <div class="factor-name">Favorite</div>
                 <div class="factor-score-bar">
                     <div class="factor-score-fill" style="width: 66%; background: linear-gradient(90deg, #00d4ff, #0099ff);">66</div>
                 </div>
@@ -735,299 +468,31 @@ body {
             <div class="factor-item">
                 <div class="factor-name">Proj vs Line</div>
                 <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 65%; background: linear-gradient(90deg, #00d4ff, #0099ff);">65</div>
+                    <div class="factor-score-fill" style="width: 59%; background: linear-gradient(90deg, #00d4ff, #0099ff);">59</div>
                 </div>
             </div>
         </div>
 
             <div class="ai-reasoning">
-                <strong>📊 Real Line + Model Edge:</strong>
-                Line pulled from sportsbook prop markets. Pick side (Over/Under) chosen by model projection vs the real line,
-                then adjusted by your context factors (usage, efficiency, pace, rest, etc.).
+                <strong>📊 Real Line + Script-Aware Edge:</strong>
+                Uses real sportsbook prop lines and chooses Over/Under based on projection vs line,
+                adjusted for matchup, injuries, blowout risk, favorite/underdog usage, and (NFL) run/pass script.
             </div>
 
-            <span class="risk-indicator low-risk">Real-line selection</span>
+            <span class="risk-indicator medium-risk">Best-value selection</span>
         </div>
     
     </div>
 
     <div id="nfl" class="league-content">
         <h2 style="font-size: 1.5em; margin: 30px 0 20px 0;">NFL Top Plays – January 05, 2026</h2>
-        
-        <div class="prediction-card high-confidence">
-            <div class="prediction-header">
-                <div>
-                    <div class="prediction-title">Travis Kelce Rec Yards OVER 35.5</div>
-                    <div style="color: var(--color-text-secondary); font-size: 0.9em; margin-top: 5px;">
-                        Kansas City Chiefs @ Las Vegas Raiders | 09:25 PM UTC
-                    </div>
-                    <div style="color: var(--color-text-secondary); font-size: 0.85em; margin-top: 6px;">
-                        Model proj: 107.95
-                    </div>
-                </div>
-                <div class="confidence-badge high">99% EDGE</div>
-            </div>
-
-            <div class="factor-breakdown">
-            <div class="factor-item">
-                <div class="factor-name">Proj vs Line</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 100%; background: linear-gradient(90deg, #00ff88, #00cc66);">100</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Route Part</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 100%; background: linear-gradient(90deg, #00ff88, #00cc66);">100</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Weather</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 90%; background: linear-gradient(90deg, #00ff88, #00cc66);">90</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Red Zone</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 78%; background: linear-gradient(90deg, #00ff88, #00cc66);">78</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Pressure</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 66%; background: linear-gradient(90deg, #00d4ff, #0099ff);">66</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Injury Risk</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 66%; background: linear-gradient(90deg, #00d4ff, #0099ff);">66</div>
-                </div>
-            </div>
-        </div>
-
-            <div class="ai-reasoning">
-                <strong>📊 Real Line + Model Edge:</strong>
-                Line pulled from sportsbook prop markets. Pick side (Over/Under) chosen by model projection vs the real line,
-                then adjusted by your context factors (usage, efficiency, pace, rest, etc.).
-            </div>
-
-            <span class="risk-indicator low-risk">Real-line selection</span>
-        </div>
-    
-        <div class="prediction-card high-confidence">
-            <div class="prediction-header">
-                <div>
-                    <div class="prediction-title">Lamar Jackson Rush Yards OVER 29.0</div>
-                    <div style="color: var(--color-text-secondary); font-size: 0.9em; margin-top: 5px;">
-                        Baltimore Ravens @ Pittsburgh Steelers | 01:20 AM UTC
-                    </div>
-                    <div style="color: var(--color-text-secondary); font-size: 0.85em; margin-top: 6px;">
-                        Model proj: 58.06
-                    </div>
-                </div>
-                <div class="confidence-badge high">99% EDGE</div>
-            </div>
-
-            <div class="factor-breakdown">
-            <div class="factor-item">
-                <div class="factor-name">Proj vs Line</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 100%; background: linear-gradient(90deg, #00ff88, #00cc66);">100</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Route Part</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 100%; background: linear-gradient(90deg, #00ff88, #00cc66);">100</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Red Zone</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 94%; background: linear-gradient(90deg, #00ff88, #00cc66);">94</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Pressure</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 66%; background: linear-gradient(90deg, #00d4ff, #0099ff);">66</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Injury Risk</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 66%; background: linear-gradient(90deg, #00d4ff, #0099ff);">66</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Weather</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 50%; background: linear-gradient(90deg, #00d4ff, #0099ff);">50</div>
-                </div>
-            </div>
-        </div>
-
-            <div class="ai-reasoning">
-                <strong>📊 Real Line + Model Edge:</strong>
-                Line pulled from sportsbook prop markets. Pick side (Over/Under) chosen by model projection vs the real line,
-                then adjusted by your context factors (usage, efficiency, pace, rest, etc.).
-            </div>
-
-            <span class="risk-indicator low-risk">Real-line selection</span>
-        </div>
-    
-        <div class="prediction-card high-confidence">
-            <div class="prediction-header">
-                <div>
-                    <div class="prediction-title">Lamar Jackson Carries OVER 5.5</div>
-                    <div style="color: var(--color-text-secondary); font-size: 0.9em; margin-top: 5px;">
-                        Baltimore Ravens @ Pittsburgh Steelers | 01:20 AM UTC
-                    </div>
-                    <div style="color: var(--color-text-secondary); font-size: 0.85em; margin-top: 6px;">
-                        Model proj: 12.90
-                    </div>
-                </div>
-                <div class="confidence-badge high">99% EDGE</div>
-            </div>
-
-            <div class="factor-breakdown">
-            <div class="factor-item">
-                <div class="factor-name">Route Part</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 100%; background: linear-gradient(90deg, #00ff88, #00cc66);">100</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Proj vs Line</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 100%; background: linear-gradient(90deg, #00ff88, #00cc66);">100</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Red Zone</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 94%; background: linear-gradient(90deg, #00ff88, #00cc66);">94</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Pressure</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 66%; background: linear-gradient(90deg, #00d4ff, #0099ff);">66</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Injury Risk</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 66%; background: linear-gradient(90deg, #00d4ff, #0099ff);">66</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Weather</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 50%; background: linear-gradient(90deg, #00d4ff, #0099ff);">50</div>
-                </div>
-            </div>
-        </div>
-
-            <div class="ai-reasoning">
-                <strong>📊 Real Line + Model Edge:</strong>
-                Line pulled from sportsbook prop markets. Pick side (Over/Under) chosen by model projection vs the real line,
-                then adjusted by your context factors (usage, efficiency, pace, rest, etc.).
-            </div>
-
-            <span class="risk-indicator low-risk">Real-line selection</span>
-        </div>
-    
-        <div class="prediction-card medium-confidence">
-            <div class="prediction-header">
-                <div>
-                    <div class="prediction-title">Lamar Jackson Pass Rush Yards OVER 240.5</div>
-                    <div style="color: var(--color-text-secondary); font-size: 0.9em; margin-top: 5px;">
-                        Baltimore Ravens @ Pittsburgh Steelers | 01:20 AM UTC
-                    </div>
-                    <div style="color: var(--color-text-secondary); font-size: 0.85em; margin-top: 6px;">
-                        Model proj: 276.91
-                    </div>
-                </div>
-                <div class="confidence-badge medium">77% EDGE</div>
-            </div>
-
-            <div class="factor-breakdown">
-            <div class="factor-item">
-                <div class="factor-name">Proj vs Line</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 100%; background: linear-gradient(90deg, #00ff88, #00cc66);">100</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Route Part</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 100%; background: linear-gradient(90deg, #00ff88, #00cc66);">100</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Red Zone</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 94%; background: linear-gradient(90deg, #00ff88, #00cc66);">94</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Pressure</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 66%; background: linear-gradient(90deg, #00d4ff, #0099ff);">66</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Injury Risk</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 66%; background: linear-gradient(90deg, #00d4ff, #0099ff);">66</div>
-                </div>
-            </div>
-        
-            <div class="factor-item">
-                <div class="factor-name">Weather</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width: 50%; background: linear-gradient(90deg, #00d4ff, #0099ff);">50</div>
-                </div>
-            </div>
-        </div>
-
-            <div class="ai-reasoning">
-                <strong>📊 Real Line + Model Edge:</strong>
-                Line pulled from sportsbook prop markets. Pick side (Over/Under) chosen by model projection vs the real line,
-                then adjusted by your context factors (usage, efficiency, pace, rest, etc.).
-            </div>
-
-            <span class="risk-indicator medium-risk">Real-line selection</span>
-        </div>
-    
+        <p style="color: var(--color-text-secondary);">No high-edge NFL props found.</p>
     </div>
 </div>
 
 <div style="text-align: center; margin: 40px 0; color: var(--color-text-secondary); font-size: 0.9em;">
     <p>⚡ Updated Daily at 8:00 AM PST</p>
-    <p>Last Updated: January 05, 2026 at 12:17 AM</p>
+    <p>Last Updated: January 05, 2026 at 01:03 AM</p>
     <p style="font-size: 0.85em; margin-top: 15px;">Disclaimer: informational only.</p>
 </div>
 
