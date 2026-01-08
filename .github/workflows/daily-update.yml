@@ -23,10 +23,10 @@ jobs:
       - name: Install dependencies
         run: pip install requests
 
-     - name: Generate dashboard
-  env:
-    ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
-run: python generate_dashboard.py
+      - name: Generate dashboard
+        run: python generate_dashboard.py
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
 
       - name: Commit and push
         run: |
