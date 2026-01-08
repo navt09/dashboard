@@ -1,244 +1,82 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>🤖 Advanced Prop Analyzer</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Prop Scouting Dashboard</title>
 <style>
 :root {
-    --color-bg: #0a0e27;
-    --color-surface: #1a1f3a;
-    --color-border: #2d3748;
-    --color-text: #f1f5f9;
-    --color-text-secondary: #cbd5e1;
-    --shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --color-bg:#0a0e27; --color-surface:#1a1f3a; --color-border:#2d3748;
+  --color-text:#f1f5f9; --color-text-secondary:#cbd5e1;
 }
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: linear-gradient(135deg, var(--color-bg) 0%, #0f1729 100%);
-    color: var(--color-text);
-    padding: 20px;
-    min-height: 100vh;
-}
-.header {
-    text-align: center;
-    margin-bottom: 40px;
-    border-bottom: 2px solid var(--color-border);
-    padding-bottom: 20px;
-}
-.header h1 {
-    font-size: 2.4em;
-    margin-bottom: 10px;
-    background: linear-gradient(135deg, #00d4ff, #0099ff);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-.header-badge {
-    display: inline-block;
-    background: rgba(0, 212, 255, 0.2);
-    border: 1px solid #00d4ff;
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 0.9em;
-    color: #00d4ff;
-    margin-bottom: 10px;
-    font-weight: 600;
-}
-.methodology {
-    background: rgba(0, 212, 255, 0.05);
-    border: 1px solid rgba(0, 212, 255, 0.2);
-    padding: 15px;
-    border-radius: 8px;
-    color: var(--color-text-secondary);
-    font-size: 0.85em;
-    margin-top: 10px;
-    line-height: 1.6;
-}
-.container { max-width: 1600px; margin: 0 auto; }
-.controls-section {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 30px;
-    box-shadow: var(--shadow);
-}
-.league-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-.league-tab {
-    padding: 10px 20px;
-    border: 2px solid var(--color-border);
-    background: transparent;
-    color: var(--color-text);
-    cursor: pointer;
-    border-radius: 8px;
-    font-weight: 600;
-    transition: all 0.3s ease;
-}
-.league-tab:hover {
-    border-color: #00d4ff;
-    background: rgba(0, 212, 255, 0.1);
-}
-.league-tab.active {
-    background: linear-gradient(135deg, #00d4ff, #0099ff);
-    border-color: #00d4ff;
-    color: #000;
-}
-.league-content { display: none; }
-.league-content.active { display: block; }
-
-.prediction-card {
-    background: var(--color-surface);
-    border: 2px solid var(--color-border);
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 20px;
-    transition: all 0.3s ease;
-}
-.prediction-card:hover {
-    border-color: #00d4ff;
-    box-shadow: 0 8px 24px rgba(0, 212, 255, 0.1);
-    transform: translateY(-2px);
-}
-.prediction-card.high-confidence { border-left: 5px solid #00ff88; }
-.prediction-card.medium-confidence { border-left: 5px solid #ffaa00; }
-.prediction-card.low-confidence { border-left: 5px solid #ff6b6b; }
-
-.prediction-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: start;
-    margin-bottom: 15px;
-}
-.prediction-title { font-size: 1.25em; font-weight: 700; }
-.confidence-badge {
-    display: inline-block;
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 0.9em;
-    font-weight: 700;
-    color: white;
-}
-.confidence-badge.high { background: linear-gradient(135deg, #00ff88, #00cc66); }
-.confidence-badge.medium { background: linear-gradient(135deg, #ffaa00, #ff8800); }
-.confidence-badge.low { background: linear-gradient(135deg, #ff6b6b, #cc0000); }
-
-.factor-breakdown {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 12px;
-    margin: 15px 0;
-}
-.factor-item {
-    background: rgba(0, 212, 255, 0.05);
-    border: 1px solid rgba(0, 212, 255, 0.2);
-    padding: 12px;
-    border-radius: 6px;
-}
-.factor-name {
-    font-size: 0.85em;
-    font-weight: 600;
-    color: #00d4ff;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 6px;
-}
-.factor-score-bar {
-    background: rgba(0, 0, 0, 0.3);
-    height: 20px;
-    border-radius: 3px;
-    overflow: hidden;
-}
-.factor-score-fill {
-    height: 100%;
-    width: 0%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.7em;
-    font-weight: 700;
-    color: #000;
-}
-.ai-reasoning {
-    background: rgba(0, 212, 255, 0.05);
-    border-left: 3px solid #00d4ff;
-    padding: 12px;
-    border-radius: 6px;
-    margin: 12px 0;
-    font-size: 0.9em;
-    line-height: 1.5;
-    color: var(--color-text-secondary);
-}
-.risk-indicator {
-    display: inline-block;
-    padding: 6px 12px;
-    border-radius: 4px;
-    font-size: 0.8em;
-    font-weight: 600;
-    margin-top: 10px;
-    background: rgba(0, 255, 136, 0.15);
-    color: #00ff88;
-}
-@media (max-width: 768px) {
-    .header h1 { font-size: 1.8em; }
-    .factor-breakdown { grid-template-columns: 1fr; }
-}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+background:linear-gradient(135deg,var(--color-bg) 0%, #0f1729 100%);
+color:var(--color-text); padding:20px;}
+.header{text-align:center;margin-bottom:18px;border-bottom:2px solid var(--color-border);padding-bottom:14px;}
+.header h1{font-size:2.2em;margin-bottom:6px;background:linear-gradient(135deg,#00d4ff,#0099ff);
+-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.header p{color:var(--color-text-secondary)}
+.container{max-width:1400px;margin:0 auto}
+.league-tabs{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:12px 0 18px;}
+.league-tab{padding:10px 18px;border:2px solid var(--color-border);background:transparent;color:var(--color-text);
+border-radius:10px;cursor:pointer;font-weight:800;}
+.league-tab.active{background:linear-gradient(135deg,#00d4ff,#0099ff);border-color:#00d4ff;color:#000}
+.league-content{display:none}
+.league-content.active{display:block}
+.prediction-card{background:var(--color-surface);border:2px solid var(--color-border);border-radius:12px;padding:16px;margin-bottom:14px;}
+.prediction-header{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;}
+.prediction-title{font-size:1.1em;font-weight:900}
+.confidence-badge{padding:8px 14px;border-radius:999px;font-weight:900;color:#fff;white-space:nowrap}
+.confidence-badge.high{background:linear-gradient(135deg,#00ff88,#00cc66)}
+.confidence-badge.medium{background:linear-gradient(135deg,#ffaa00,#ff8800)}
+.confidence-badge.low{background:linear-gradient(135deg,#ff6b6b,#cc0000)}
+.factor-breakdown{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin:14px 0;}
+.factor-item{background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.2);padding:10px;border-radius:10px}
+.factor-name{font-size:0.8em;font-weight:800;color:#00d4ff;text-transform:uppercase;margin-bottom:6px}
+.factor-score-bar{background:rgba(0,0,0,0.3);height:18px;border-radius:4px;overflow:hidden}
+.factor-score-fill{height:100%;display:flex;align-items:center;justify-content:center;font-size:0.75em;font-weight:900;color:#000}
+.ai-reasoning{background:rgba(0,212,255,0.05);border-left:3px solid #00d4ff;padding:10px;border-radius:10px;color:var(--color-text-secondary);line-height:1.45}
 </style>
 </head>
 <body>
+  <div class="header">
+    <h1>Automated Prop Scouting Dashboard</h1>
+    <p>January 08, 2026 • NBA picks: 0 • NFL picks: 0</p>
+    <p style="margin-top:6px;font-size:0.95em;">Last updated: January 08, 2026 at 07:53 AM UTC</p>
 
-<div class="header">
-    <div class="header-badge">🤖 ALL PLAYERS + REAL LINES</div>
-    <h1>Advanced Prop Analyzer</h1>
-    <p style="color: var(--color-text-secondary); font-size: 1.05em;">
-        Scores Over + Under | Filters Injuries | Fixes Matchups | Script-Aware
-    </p>
-    <p style="color: var(--color-text-secondary); font-size: 0.95em; margin-top: 8px;">
-        📊 0 NBA Picks | 🏈 0 NFL Picks
-    </p>
-    <div class="methodology">
-        Picks are built from real sportsbook prop markets (Odds API), assigned to the correct game using ESPN rosters,
-        filtered for OUT/IR/INACTIVE players via ESPN injuries, then scored using matchup + injury + script + blowout factors.
+    <div class="league-tabs">
+      <button class="league-tab active" data-league="nba">🏀 NBA</button>
+      <button class="league-tab" data-league="nfl">🏈 NFL</button>
     </div>
-</div>
+  </div>
 
-<div class="container">
-    <div class="controls-section">
-        <div class="league-tabs">
-            <button class="league-tab active" data-league="nba">🏀 NBA PICKS</button>
-            <button class="league-tab" data-league="nfl">🏈 NFL PICKS</button>
-        </div>
-    </div>
-
+  <div class="container">
     <div id="nba" class="league-content active">
-        <h2 style="font-size: 1.5em; margin: 30px 0 20px 0;">NBA Top Plays – January 07, 2026</h2>
-        <p style="color: var(--color-text-secondary);">No high-edge NBA props found.</p>
+      <h2 style="margin: 10px 0 12px;">NBA Top Value Picks</h2>
+      <p style="color:#cbd5e1;">No high-edge NBA props found.</p>
     </div>
 
     <div id="nfl" class="league-content">
-        <h2 style="font-size: 1.5em; margin: 30px 0 20px 0;">NFL Top Plays – January 07, 2026</h2>
-        <p style="color: var(--color-text-secondary);">No high-edge NFL props found.</p>
+      <h2 style="margin: 10px 0 12px;">NFL Top Value Picks</h2>
+      <p style="color:#cbd5e1;">No high-edge NFL props found.</p>
     </div>
-</div>
 
-<div style="text-align: center; margin: 40px 0; color: var(--color-text-secondary); font-size: 0.9em;">
-    <p>⚡ Updated Daily at 8:00 AM PST</p>
-    <p>Last Updated: January 07, 2026 at 01:59 PM</p>
-    <p style="font-size: 0.85em; margin-top: 15px;">Disclaimer: informational only.</p>
-</div>
+    <div style="text-align:center;margin:26px 0;color:var(--color-text-secondary);font-size:0.9em;">
+      <p>Disclaimer: informational only. Always do your own research.</p>
+    </div>
+  </div>
 
 <script>
 document.querySelectorAll('.league-tab').forEach(tab => {
-    tab.addEventListener('click', function() {
-        const league = this.getAttribute('data-league');
-        document.querySelectorAll('.league-tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.league-content').forEach(c => c.classList.remove('active'));
-        this.classList.add('active');
-        document.getElementById(league).classList.add('active');
-    });
+  tab.addEventListener('click', function() {
+    const league = this.getAttribute('data-league');
+    document.querySelectorAll('.league-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.league-content').forEach(c => c.classList.remove('active'));
+    this.classList.add('active');
+    document.getElementById(league).classList.add('active');
+  });
 });
 </script>
-
 </body>
 </html>
