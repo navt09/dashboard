@@ -1,80 +1,101 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Prop Scouting Dashboard</title>
+<title>Prop Dashboard</title>
 <style>
 :root {
-  --color-bg:#0a0e27; --color-surface:#1a1f3a; --color-border:#2d3748;
-  --color-text:#f1f5f9; --color-text-secondary:#cbd5e1;
+  --bg:#0a0e27; --surface:#1a1f3a; --border:#2d3748; --text:#f1f5f9; --muted:#cbd5e1;
 }
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
-background:linear-gradient(135deg,var(--color-bg) 0%, #0f1729 100%);
-color:var(--color-text); padding:20px;}
-.header{text-align:center;margin-bottom:18px;border-bottom:2px solid var(--color-border);padding-bottom:14px;}
-.header h1{font-size:2.2em;margin-bottom:6px;background:linear-gradient(135deg,#00d4ff,#0099ff);
--webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.header p{color:var(--color-text-secondary)}
-.container{max-width:1400px;margin:0 auto}
-.league-tabs{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:12px 0 18px;}
-.league-tab{padding:10px 18px;border:2px solid var(--color-border);background:transparent;color:var(--color-text);
-border-radius:10px;cursor:pointer;font-weight:800;}
-.league-tab.active{background:linear-gradient(135deg,#00d4ff,#0099ff);border-color:#00d4ff;color:#000}
-.league-content{display:none}
-.league-content.active{display:block}
-.prediction-card{background:var(--color-surface);border:2px solid var(--color-border);border-radius:12px;padding:16px;margin-bottom:14px;}
-.prediction-header{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;}
-.prediction-title{font-size:1.1em;font-weight:900}
-.confidence-badge{padding:8px 14px;border-radius:999px;font-weight:900;color:#fff;white-space:nowrap}
+*{box-sizing:border-box}
+body{margin:0;padding:20px;font-family:system-ui,-apple-system,Segoe UI,Roboto;background:linear-gradient(135deg,var(--bg),#0f1729);color:var(--text)}
+.header{text-align:center;border-bottom:2px solid var(--border);padding-bottom:12px;margin-bottom:18px}
+h1{margin:0;font-size:2rem;background:linear-gradient(135deg,#00d4ff,#0099ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+small{color:var(--muted)}
+.tabs{display:flex;gap:10px;justify-content:center;margin:16px 0}
+.tab{padding:10px 16px;border:2px solid var(--border);background:transparent;color:var(--text);border-radius:12px;font-weight:900;cursor:pointer}
+.tab.active{background:linear-gradient(135deg,#00d4ff,#0099ff);border-color:#00d4ff;color:#000}
+.section{display:none;max-width:1400px;margin:0 auto}
+.section.active{display:block}
+.prediction-card{background:var(--surface);border:2px solid var(--border);border-radius:14px;padding:14px;margin:12px 0}
+.prediction-header{display:flex;justify-content:space-between;gap:12px}
+.prediction-title{font-weight:1000;font-size:1.05rem}
+.prediction-sub{color:var(--muted);font-size:0.9rem;margin-top:6px}
+.confidence-badge{padding:8px 12px;border-radius:999px;font-weight:1000;color:#fff;white-space:nowrap}
 .confidence-badge.high{background:linear-gradient(135deg,#00ff88,#00cc66)}
 .confidence-badge.medium{background:linear-gradient(135deg,#ffaa00,#ff8800)}
 .confidence-badge.low{background:linear-gradient(135deg,#ff6b6b,#cc0000)}
-.factor-breakdown{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin:14px 0;}
+.factor-breakdown{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin-top:12px}
 .factor-item{background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.2);padding:10px;border-radius:10px}
-.factor-name{font-size:0.8em;font-weight:800;color:#00d4ff;text-transform:uppercase;margin-bottom:6px}
-.factor-score-bar{background:rgba(0,0,0,0.3);height:18px;border-radius:4px;overflow:hidden}
-.factor-score-fill{height:100%;display:flex;align-items:center;justify-content:center;font-size:0.75em;font-weight:900;color:#000}
-.ai-reasoning{background:rgba(0,212,255,0.05);border-left:3px solid #00d4ff;padding:10px;border-radius:10px;color:var(--color-text-secondary);line-height:1.45}
+.factor-name{font-size:0.78rem;font-weight:1000;color:#00d4ff;text-transform:uppercase}
+.factor-score-bar{height:18px;border-radius:6px;background:rgba(0,0,0,0.3);overflow:hidden;margin-top:6px}
+.factor-score-fill{height:100%;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:1000;color:#000}
 </style>
 </head>
 <body>
   <div class="header">
     <h1>Automated Prop Scouting Dashboard</h1>
-    <p>January 08, 2026 • NBA picks: 0 • NFL picks: 0</p>
-    <p style="margin-top:6px;font-size:0.95em;">Last updated: January 08, 2026 at 07:53 AM UTC</p>
-
-    <div class="league-tabs">
-      <button class="league-tab active" data-league="nba">🏀 NBA</button>
-      <button class="league-tab" data-league="nfl">🏈 NFL</button>
+    <small>Last updated: January 08, 2026 at 08:54 AM UTC</small>
+    <div class="tabs">
+      <button class="tab active" data-tab="nba">🏀 NBA</button>
+      <button class="tab" data-tab="nfl">🏈 NFL</button>
     </div>
   </div>
 
-  <div class="container">
-    <div id="nba" class="league-content active">
-      <h2 style="margin: 10px 0 12px;">NBA Top Value Picks</h2>
-      <p style="color:#cbd5e1;">No high-edge NBA props found.</p>
-    </div>
+  <div id="nba" class="section active">
+    <h2>NBA Best Value (Over/Under)</h2>
+    <p>No picks returned.</p>
+  </div>
 
-    <div id="nfl" class="league-content">
-      <h2 style="margin: 10px 0 12px;">NFL Top Value Picks</h2>
-      <p style="color:#cbd5e1;">No high-edge NFL props found.</p>
-    </div>
+  <div id="nfl" class="section">
+    <h2>NFL Best Value (Over/Under)</h2>
+    <p>No picks returned.</p>
+  </div>
 
-    <div style="text-align:center;margin:26px 0;color:var(--color-text-secondary);font-size:0.9em;">
-      <p>Disclaimer: informational only. Always do your own research.</p>
-    </div>
+  <div style="max-width:1400px;margin:0 auto;">
+    
+    <details style="margin-top:16px;color:#cbd5e1;">
+      <summary style="cursor:pointer;font-weight:900;">Debug summary (why picks may be low)</summary>
+      <pre style="white-space:pre-wrap;background:#0b1226;border:1px solid #2d3748;border-radius:10px;padding:12px;margin-top:10px;">
+NBA: {
+  "games": 4,
+  "events_with_props_odds": 0,
+  "bookmakers_empty": 0,
+  "prop_rows_total": 0,
+  "skipped_injured": 0,
+  "skipped_no_espn_match": 0,
+  "skipped_no_stats": 0,
+  "skipped_low_edge": 0,
+  "kept": 0,
+  "used_threshold": 50,
+  "candidate_count": 0
+}
+NFL: {
+  "games": 6,
+  "events_with_props_odds": 0,
+  "bookmakers_empty": 0,
+  "prop_rows_total": 0,
+  "skipped_injured": 0,
+  "skipped_no_espn_match": 0,
+  "skipped_no_stats": 0,
+  "skipped_low_edge": 0,
+  "kept": 0,
+  "used_threshold": 50,
+  "candidate_count": 0
+}
+      </pre>
+    </details>
+    
   </div>
 
 <script>
-document.querySelectorAll('.league-tab').forEach(tab => {
-  tab.addEventListener('click', function() {
-    const league = this.getAttribute('data-league');
-    document.querySelectorAll('.league-tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.league-content').forEach(c => c.classList.remove('active'));
-    this.classList.add('active');
-    document.getElementById(league).classList.add('active');
+document.querySelectorAll(".tab").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById(btn.dataset.tab).classList.add("active");
   });
 });
 </script>
