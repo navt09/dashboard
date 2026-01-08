@@ -1,24 +1,26 @@
 #!/usr/bin/env python3
 """
-Automated Prop-Bet Scouting Dashboard (NBA + NFL)
-- Pulls upcoming games + player prop lines from The Odds API (free tier friendly)
-- Pulls team abbreviations + injuries from ESPN (free)
-- Scores props with a rules-based edge model and outputs AI_Prediction_Engine.html
-
-Key fix:
-- Use ESPN abbreviations for roster/injury/team matching
-- Use normalized abbreviations ONLY for OPPONENT_DEFENSE keys (e.g., GSW -> GS)
+Fully automatic prop scouting dashboard (NBA + NFL)
+- Pulls today's events + player prop lines from The Odds API
+- Pulls injuries + rosters + stats from ESPN (free endpoints)
+- Automatically maps ALL players (no hardcoded player list)
+- Computes projections from ESPN last-10/season stats
+- Scores Over/Under with extra context:
+  * Blowout risk
+  * Underdog vs favorite usage shift
+  * NFL run-heavy vs pass-heavy scripts
+  * Garbage-time inflation/deflation
+- Outputs AI_Prediction_Engine.html
 """
 
 import os
 import re
-import math
 import json
+import math
 import time
 import requests
-from datetime import datetime as dt
-from datetime import timezone
-from typing import Dict, List, Tuple, Any
+from datetime import datetime as dt, timezone
+from typing import Dict, Any, Optional, Tuple, List
 
 # =============================================================================
 # CONFIG
@@ -26,16 +28,13 @@ from typing import Dict, List, Tuple, Any
 
 ODDS_API_KEY = os.getenv("ODDS_API_KEY", "").strip()
 if not ODDS_API_KEY:
-    raise RuntimeError("Missing ODDS_API_KEY environment variable. Add it in GitHub Secrets.")
+    raise RuntimeError("Missing ODDS_API_KEY. Add it in GitHub Secrets and set env in workflow.")
 
 ODDS_API_BASE = "https://api.the-odds-api.com/v4"
-
 NBA_SPORT_KEY = "basketball_nba"
 NFL_SPORT_KEY = "americanfootball_nfl"
 
-# Keep your prop markets aligned to what your Odds API plan supports.
-# If a market is unsupported, the request might error or return empty markets.
-# You can prune/adjust later.
+# If your plan doesn't return some markets, keep them but code will skip if empty.
 NBA_MARKETS = [
     "player_points",
     "player_rebounds",
@@ -48,6 +47,7 @@ NBA_MARKETS = [
     "player_points_rebounds",
     "player_points_assists",
     "player_rebounds_assists",
+    # some books support these:
     "player_free_throws",
     "player_field_goals",
 ]
@@ -62,10 +62,8 @@ NFL_MARKETS = [
     "player_reception_tds",
 ]
 
-# Optional: try to fetch spreads/totals for blowout/script logic
-MAIN_LINE_MARKETS = ["spreads", "totals"]
+MAIN_LINE_MARKETS = ["spreads", "totals"]  # for scripts + blowout risk (optional)
 
-# Map Odds API market -> your internal prop_type keys (must match your projection/scoring logic)
 NBA_MARKET_TO_PROP = {
     "player_points": "points",
     "player_rebounds": "rebounds",
@@ -93,63 +91,26 @@ NFL_MARKET_TO_PROP = {
     "player_reception_tds": "rec_td",
 }
 
-# =============================================================================
-# PASTE YOUR EXISTING DICTIONARIES HERE (UNCHANGED)
-# =============================================================================
+# ESPN endpoints
+ESPN_NBA_SCOREBOARD = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard"
+ESPN_NFL_SCOREBOARD = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard"
+ESPN_NBA_TEAMS = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams"
+ESPN_NFL_TEAMS = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams"
 
-# --- PASTE: NBA_PLAYERS_DATA (unchanged) ---
-# NBA_PLAYERS_DATA = {...}
+# Cache files (optional but strongly recommended)
+CACHE_DIR = ".cache"
+PLAYER_INDEX_CACHE = os.path.join(CACHE_DIR, "espn_player_index.json")
+PLAYER_STATS_CACHE = os.path.join(CACHE_DIR, "espn_player_stats.json")
+INJURY_CACHE = os.path.join(CACHE_DIR, "espn_injuries.json")
 
-# --- PASTE: NFL_PLAYERS_DATA (unchanged) ---
-# NFL_PLAYERS_DATA = {...}
-
-# --- PASTE: OPPONENT_DEFENSE (unchanged) ---
-# OPPONENT_DEFENSE = {...}
-
-# --- PASTE: REFEREE_TENDENCIES (unchanged) ---
-# REFEREE_TENDENCIES = {...}
-
+REQUEST_SLEEP = 0.15  # gentle rate limit
 
 # =============================================================================
-# TEAM ABBR NORMALIZATION (ESPN -> your OPPONENT_DEFENSE keys)
+# UTILS
 # =============================================================================
 
-NBA_ABBR_ALIASES = {
-    # ESPN uses GSW; your defense table uses GS
-    "GSW": "GS",
-}
-
-NFL_ABBR_ALIASES = {
-    # Add if you ever need it
-    # "WSH": "WAS",
-}
-
-# Odds API team naming sometimes differs from ESPN displayName.
-# Add aliases here if you see mismatches.
-TEAM_NAME_ALIASES = {
-    "nba": {
-        "LA Lakers": "Los Angeles Lakers",
-        "Los Angeles Lakers": "Los Angeles Lakers",
-        "LA Clippers": "LA Clippers",
-        "Golden State Warriors": "Golden State Warriors",
-        "GS Warriors": "Golden State Warriors",
-    },
-    "nfl": {
-        "Kansas City Chiefs": "Kansas City Chiefs",
-        "KC Chiefs": "Kansas City Chiefs",
-    }
-}
-
-
-# =============================================================================
-# UTIL
-# =============================================================================
-
-def _safe_get_json(url: str, timeout: int = 12, headers: dict | None = None) -> dict:
-    headers = headers or {"User-Agent": "Mozilla/5.0"}
-    r = requests.get(url, timeout=timeout, headers=headers)
-    r.raise_for_status()
-    return r.json()
+def ensure_cache_dir():
+    os.makedirs(CACHE_DIR, exist_ok=True)
 
 def clamp(x: float, lo: float, hi: float) -> float:
     return max(lo, min(hi, x))
@@ -157,128 +118,48 @@ def clamp(x: float, lo: float, hi: float) -> float:
 def sigmoid(x: float) -> float:
     return 1.0 / (1.0 + math.exp(-x))
 
+def _get_json(url: str, params: dict | None = None, timeout: int = 15) -> dict:
+    headers = {"User-Agent": "Mozilla/5.0"}
+    r = requests.get(url, params=params, timeout=timeout, headers=headers)
+    r.raise_for_status()
+    time.sleep(REQUEST_SLEEP)
+    return r.json()
+
+def normalize_player_name(name: str) -> str:
+    if not name:
+        return ""
+    s = name.lower().strip()
+    s = re.sub(r"[^a-z0-9\s]", "", s)
+    s = re.sub(r"\b(jr|sr|ii|iii|iv|v)\b", "", s).strip()
+    s = re.sub(r"\s+", " ", s)
+    return s
+
 def format_time_local(iso_time: str) -> str:
-    # Odds API times are ISO8601 UTC like "2026-01-07T03:00:00Z"
     try:
         t = dt.fromisoformat(iso_time.replace("Z", "+00:00")).astimezone()
         return t.strftime("%I:%M %p %Z")
     except Exception:
         return iso_time
 
-def normalize_player_name(name: str) -> str:
-    if not name:
-        return ""
-    s = name.lower().strip()
-    # remove punctuation
-    s = re.sub(r"[^a-z0-9\s]", "", s)
-    # remove suffixes
-    s = re.sub(r"\b(jr|sr|ii|iii|iv|v)\b", "", s).strip()
-    # collapse whitespace
-    s = re.sub(r"\s+", " ", s)
-    return s
+def load_json(path: str) -> dict:
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
 
-def normalize_team_abbr(league: str, abbr: str) -> str:
-    if not abbr:
-        return ""
-    abbr = abbr.strip().upper()
-    if league == "nba":
-        return NBA_ABBR_ALIASES.get(abbr, abbr)
-    return NFL_ABBR_ALIASES.get(abbr, abbr)
-
+def save_json(path: str, obj: dict):
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(obj, f, ensure_ascii=False, indent=2)
 
 # =============================================================================
-# ESPN: TEAM MAP + INJURIES (FREE)
-# =============================================================================
-
-def fetch_espn_team_map(league: str) -> dict:
-    """
-    Returns dict: {team_display_name: {"id": "...", "abbr": "..."}}
-    """
-    if league == "nba":
-        url = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams"
-    else:
-        url = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams"
-
-    data = _safe_get_json(url)
-    out = {}
-    # ESPN format: sports -> leagues -> teams
-    leagues = data.get("sports", [])[0].get("leagues", []) if data.get("sports") else []
-    teams = leagues[0].get("teams", []) if leagues else []
-    for t in teams:
-        team = t.get("team", {})
-        name = team.get("displayName", "")
-        out[name] = {
-            "id": team.get("id", ""),
-            "abbr": team.get("abbreviation", ""),
-        }
-    return out
-
-def resolve_espn_display_name(league: str, odds_team_name: str, espn_team_map: dict) -> str:
-    """
-    Best-effort mapping from Odds API team name -> ESPN displayName
-    """
-    if not odds_team_name:
-        return ""
-    alias = TEAM_NAME_ALIASES.get(league, {}).get(odds_team_name)
-    if alias and alias in espn_team_map:
-        return alias
-    # direct match
-    if odds_team_name in espn_team_map:
-        return odds_team_name
-    # fallback: try stripping city punctuation / common variants
-    return odds_team_name  # if not found, return as-is (abbr will be missing)
-
-def fetch_espn_injuries(league: str) -> Tuple[set[str], dict]:
-    """
-    Returns:
-      injured_names_norm: set of normalized player names that are OUT/INACTIVE/DOUBTFUL/etc.
-      details: dict normalized_name -> (status, team_abbr_espn, raw_display_name)
-    """
-    team_map = fetch_espn_team_map(league)
-    injured_norm = set()
-    details = {}
-
-    for team_name, meta in team_map.items():
-        team_id = meta.get("id", "")
-        team_abbr = meta.get("abbr", "")
-        if not team_id:
-            continue
-
-        # ESPN team endpoint supports enable=injuries
-        if league == "nba":
-            url = f"https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/{team_id}?enable=injuries"
-        else:
-            url = f"https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/{team_id}?enable=injuries"
-
-        try:
-            data = _safe_get_json(url)
-            injuries = data.get("team", {}).get("injuries", []) or data.get("injuries", [])
-            for inj in injuries:
-                athlete = inj.get("athlete", {}) or {}
-                raw_name = athlete.get("displayName") or ""
-                status = (inj.get("status", {}) or {}).get("name") or inj.get("status") or ""
-                status_upper = str(status).upper()
-
-                # treat these as "do not play"
-                if any(x in status_upper for x in ["OUT", "INACTIVE", "DOUBTFUL", "IR", "DNP"]):
-                    nm = normalize_player_name(raw_name)
-                    if nm:
-                        injured_norm.add(nm)
-                        details[nm] = (status, team_abbr, raw_name)
-        except Exception:
-            continue
-
-    return injured_norm, details
-
-
-# =============================================================================
-# ODDS API: EVENTS + ODDS
+# ODDS API (lines)
 # =============================================================================
 
 def oddsapi_get_events(sport_key: str) -> list[dict]:
     url = f"{ODDS_API_BASE}/sports/{sport_key}/events"
     params = {"apiKey": ODDS_API_KEY}
-    r = requests.get(url, params=params, timeout=15)
+    r = requests.get(url, params=params, timeout=20)
     r.raise_for_status()
     return r.json()
 
@@ -290,7 +171,7 @@ def oddsapi_get_event_odds(sport_key: str, event_id: str, markets: list[str]) ->
         "markets": ",".join(markets),
         "oddsFormat": "american",
     }
-    r = requests.get(url, params=params, timeout=20)
+    r = requests.get(url, params=params, timeout=25)
     r.raise_for_status()
     return r.json()
 
@@ -307,50 +188,6 @@ def build_games_from_events(events: list[dict]) -> list[dict]:
         })
     return games
 
-def extract_main_lines(odds_json: dict) -> dict:
-    """
-    Returns: {"home_spread": float|None, "away_spread": float|None, "total": float|None}
-    Best-effort from Odds API spreads/totals markets.
-    """
-    out = {"home_spread": None, "away_spread": None, "total": None}
-    bookmakers = odds_json.get("bookmakers", []) or []
-    if not bookmakers:
-        return out
-
-    # pick first bookmaker that has data
-    for bm in bookmakers:
-        markets = bm.get("markets", []) or []
-        # spreads
-        for m in markets:
-            if m.get("key") == "spreads":
-                for o in m.get("outcomes", []) or []:
-                    name = o.get("name")
-                    point = o.get("point")
-                    if point is None:
-                        continue
-                    try:
-                        point = float(point)
-                    except Exception:
-                        continue
-                    # spread outcomes named by team
-                    # We'll set later when we know home/away names
-                    # Store both and map by name externally if needed
-                # We'll handle mapping in caller (simpler)
-        # totals
-        for m in markets:
-            if m.get("key") == "totals":
-                # totals outcomes are Over/Under with point = total
-                for o in m.get("outcomes", []) or []:
-                    if o.get("name", "").lower() == "over" and o.get("point") is not None:
-                        try:
-                            out["total"] = float(o["point"])
-                            break
-                        except Exception:
-                            pass
-        if out["total"] is not None:
-            break
-    return out
-
 def parse_player_props(odds_json: dict) -> list[dict]:
     """
     Returns list of:
@@ -362,7 +199,6 @@ def parse_player_props(odds_json: dict) -> list[dict]:
         for m in bm.get("markets", []) or []:
             market_key = m.get("key", "")
             for o in m.get("outcomes", []) or []:
-                # Odds API player prop outcomes: typically have "description" as player, "name" as Over/Under
                 player = o.get("description") or ""
                 side = (o.get("name") or "").lower()
                 point = o.get("point")
@@ -381,7 +217,6 @@ def parse_player_props(odds_json: dict) -> list[dict]:
                 except Exception:
                     price = None
 
-                # merge over+under into one record per (market, player, line)
                 key = (market_key, player, line)
                 existing = next((p for p in parsed if (p["market"], p["player"], p["line"]) == key), None)
                 if existing is None:
@@ -396,265 +231,497 @@ def parse_player_props(odds_json: dict) -> list[dict]:
 
     return parsed
 
+def parse_spread_total(odds_json: dict, home_team: str, away_team: str) -> Tuple[Optional[float], Optional[float]]:
+    """
+    Returns: (spread_abs, total_points)
+    spread_abs is absolute spread (e.g., 7.5), total_points is O/U total if available.
+    """
+    spread_abs = None
+    total_pts = None
+    try:
+        for bm in odds_json.get("bookmakers", []) or []:
+            for m in bm.get("markets", []) or []:
+                if m.get("key") == "spreads":
+                    home_spread = None
+                    away_spread = None
+                    for o in m.get("outcomes", []) or []:
+                        nm = o.get("name")
+                        pt = o.get("point")
+                        if pt is None:
+                            continue
+                        try:
+                            pt = float(pt)
+                        except Exception:
+                            continue
+                        if nm == home_team:
+                            home_spread = pt
+                        elif nm == away_team:
+                            away_spread = pt
+                    if home_spread is not None:
+                        spread_abs = abs(home_spread)
+                    elif away_spread is not None:
+                        spread_abs = abs(away_spread)
+
+                if m.get("key") == "totals":
+                    for o in m.get("outcomes", []) or []:
+                        pt = o.get("point")
+                        if pt is None:
+                            continue
+                        try:
+                            total_pts = float(pt)
+                        except Exception:
+                            pass
+            if spread_abs is not None or total_pts is not None:
+                break
+    except Exception:
+        pass
+    return spread_abs, total_pts
 
 # =============================================================================
-# EDGE MODEL (NBA focus + general)
+# ESPN: PLAYER INDEX (name -> athlete_id + team_abbr) AUTOMATIC
 # =============================================================================
 
-def nba_projection(player_data: dict, prop_type: str, ctx: dict) -> float:
-    """
-    Rules-based projection for NBA props (not a full model).
-    Uses your player snapshots + context (pace, injuries, spread).
-    """
-    opp_def = OPPONENT_DEFENSE["nba"].get(ctx.get("opponent_abbr_def", ""), {})
-    pace = float(opp_def.get("pace_adjust", 1.0))
+def fetch_espn_team_list(league: str) -> list[dict]:
+    url = ESPN_NBA_TEAMS if league == "nba" else ESPN_NFL_TEAMS
+    data = _get_json(url)
+    leagues = data.get("sports", [])[0].get("leagues", []) if data.get("sports") else []
+    teams = leagues[0].get("teams", []) if leagues else []
+    out = []
+    for t in teams:
+        team = t.get("team", {})
+        out.append({
+            "id": team.get("id"),
+            "name": team.get("displayName"),
+            "abbr": team.get("abbreviation"),
+        })
+    return out
 
-    usage = float(player_data.get("usage_rate", 25.0))
-    eff = float(player_data.get("efficiency", 0.58))
-    rest = float(player_data.get("rest_days", 1))
-    ha = float(player_data.get("home_away_split", 1.0))
-    b2b = bool(player_data.get("back_to_back", False))
-    load = bool(player_data.get("load_managed", False))
+def fetch_roster_for_team(league: str, team_id: str) -> list[dict]:
+    """
+    ESPN roster endpoint:
+    /teams/{id}/roster
+    """
+    base = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams" if league == "nba" \
+           else "https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams"
+    url = f"{base}/{team_id}/roster"
+    data = _get_json(url)
+    athletes = []
+    for grp in data.get("athletes", []) or []:
+        for a in grp.get("items", []) or []:
+            athletes.append(a)
+    # Some formats use athletes[].athletes
+    if not athletes and data.get("athletes"):
+        for grp in data["athletes"]:
+            for a in grp.get("athletes", []) or []:
+                athletes.append(a)
+    return athletes
 
-    # Base from recent stats
-    if prop_type == "points":
-        base = float(player_data.get("recent_ppg", 0))
-    elif prop_type == "rebounds":
-        base = float(player_data.get("recent_rpg", 0))
-    elif prop_type == "assists":
-        base = float(player_data.get("recent_apg", 0))
-    elif prop_type == "3_pointers":
-        base = float(player_data.get("recent_3pm", 0))
-    elif prop_type == "steals":
-        base = float(player_data.get("recent_stl", 0))
-    elif prop_type == "blocks":
-        base = float(player_data.get("recent_blk", 0))
-    elif prop_type == "turnovers":
-        # no snapshot in your db; estimate from usage
-        base = 2.0 + (usage - 25.0) * 0.05
-    elif prop_type == "field_goals":
-        base = float(player_data.get("fgm", 0))
-    elif prop_type == "free_throws":
-        ft_rate = float(player_data.get("ft_rate", 0.25))
-        ppg = float(player_data.get("recent_ppg", 0))
-        ft_att = (ppg * ft_rate) / 0.75  # assume 75% FT%
-        base = ft_att * 0.75
-    elif prop_type == "pts_reb":
-        base = float(player_data.get("recent_ppg", 0)) + float(player_data.get("recent_rpg", 0))
-    elif prop_type == "pts_ast":
-        base = float(player_data.get("recent_ppg", 0)) + float(player_data.get("recent_apg", 0))
-    elif prop_type == "reb_ast":
-        base = float(player_data.get("recent_rpg", 0)) + float(player_data.get("recent_apg", 0))
-    elif prop_type == "pts_reb_ast":
-        base = float(player_data.get("recent_ppg", 0)) + float(player_data.get("recent_rpg", 0)) + float(player_data.get("recent_apg", 0))
+def build_player_index(league: str, force_refresh: bool = False) -> dict:
+    """
+    Builds mapping:
+      normalized_name -> {"id": athlete_id, "name": displayName, "team_abbr": abbr}
+    """
+    ensure_cache_dir()
+    cache = load_json(PLAYER_INDEX_CACHE)
+    today = dt.now(timezone.utc).strftime("%Y-%m-%d")
+    key = f"{league}:{today}"
+
+    if not force_refresh and key in cache:
+        return cache[key]
+
+    idx = {}
+    teams = fetch_espn_team_list(league)
+    for tm in teams:
+        team_id = tm.get("id")
+        team_abbr = tm.get("abbr") or ""
+        if not team_id:
+            continue
+        try:
+            roster = fetch_roster_for_team(league, team_id)
+        except Exception:
+            continue
+
+        for a in roster:
+            raw_name = a.get("displayName") or a.get("fullName") or ""
+            athlete_id = a.get("id") or ""
+            if not raw_name or not athlete_id:
+                continue
+            nm = normalize_player_name(raw_name)
+            if not nm:
+                continue
+            # Keep first match; ESPN rosters are authoritative.
+            if nm not in idx:
+                idx[nm] = {"id": athlete_id, "name": raw_name, "team_abbr": team_abbr}
+
+    cache[key] = idx
+    save_json(PLAYER_INDEX_CACHE, cache)
+    return idx
+
+# =============================================================================
+# ESPN: INJURIES (AUTOMATIC)
+# =============================================================================
+
+def build_injury_set(league: str, force_refresh: bool = False) -> Tuple[set[str], dict]:
+    """
+    Returns:
+      injured_norm_set, details (normalized -> {"status":..., "team_abbr":..., "raw":...})
+    """
+    ensure_cache_dir()
+    cache = load_json(INJURY_CACHE)
+    today = dt.now(timezone.utc).strftime("%Y-%m-%d")
+    key = f"{league}:{today}"
+
+    if not force_refresh and key in cache:
+        data = cache[key]
+        return set(data.get("injured", [])), data.get("details", {})
+
+    team_url = ESPN_NBA_TEAMS if league == "nba" else ESPN_NFL_TEAMS
+    teams_data = _get_json(team_url)
+
+    injured = set()
+    details = {}
+
+    leagues = teams_data.get("sports", [])[0].get("leagues", []) if teams_data.get("sports") else []
+    teams = leagues[0].get("teams", []) if leagues else []
+
+    for t in teams:
+        team = t.get("team", {})
+        team_id = team.get("id")
+        team_abbr = team.get("abbreviation") or ""
+        if not team_id:
+            continue
+
+        base = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams" if league == "nba" \
+               else "https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams"
+        url = f"{base}/{team_id}?enable=injuries"
+
+        try:
+            data = _get_json(url)
+        except Exception:
+            continue
+
+        injuries = data.get("team", {}).get("injuries", []) or data.get("injuries", []) or []
+        for inj in injuries:
+            athlete = inj.get("athlete", {}) or {}
+            raw_name = athlete.get("displayName") or ""
+            status = (inj.get("status", {}) or {}).get("name") or inj.get("status") or ""
+            status_upper = str(status).upper()
+
+            # conservative filter: if not clearly active, exclude
+            if any(x in status_upper for x in ["OUT", "INACTIVE", "DOUBTFUL", "IR", "DNP", "SUSP"]):
+                nm = normalize_player_name(raw_name)
+                if nm:
+                    injured.add(nm)
+                    details[nm] = {"status": str(status), "team_abbr": team_abbr, "raw": raw_name}
+
+    cache[key] = {"injured": sorted(list(injured)), "details": details}
+    save_json(INJURY_CACHE, cache)
+    return injured, details
+
+# =============================================================================
+# ESPN: PLAYER STATS (AUTOMATIC DAILY)
+# =============================================================================
+
+def fetch_athlete_profile(league: str, athlete_id: str) -> dict:
+    """
+    ESPN athlete profile endpoint:
+      /athletes/{id}
+    """
+    base = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/athletes" if league == "nba" \
+           else "https://site.api.espn.com/apis/site/v2/sports/football/nfl/athletes"
+    url = f"{base}/{athlete_id}"
+    return _get_json(url)
+
+def extract_stat_bundle_from_profile(league: str, profile: dict) -> dict:
+    """
+    Best-effort extraction for season averages + last-10-ish if present.
+    ESPN structures vary, so this function is defensive.
+    Output fields should support our prop types.
+    """
+    out = {}
+
+    # Common: profile["statistics"] list with categories
+    stats = profile.get("statistics") or []
+    # Sometimes stats are nested in "statistics"->"splits" or "splits"->"categories"
+    # We'll just scan for key stats by label/abbrev.
+    def scan_for(labels: list[str]) -> Optional[float]:
+        for block in stats:
+            for cat in block.get("categories", []) or []:
+                for st in cat.get("stats", []) or []:
+                    name = (st.get("name") or st.get("displayName") or "").lower()
+                    abbr = (st.get("abbreviation") or "").lower()
+                    val = st.get("value")
+                    if val is None:
+                        continue
+                    if any(l in name for l in labels) or any(l == abbr for l in labels):
+                        try:
+                            return float(val)
+                        except Exception:
+                            continue
+        return None
+
+    if league == "nba":
+        # Typical abbreviations vary; we try common ones
+        out["ppg"] = scan_for(["points per game", "ppg"]) or scan_for(["pts"])  # fallback
+        out["rpg"] = scan_for(["rebounds per game", "rpg"]) or scan_for(["reb"])
+        out["apg"] = scan_for(["assists per game", "apg"]) or scan_for(["ast"])
+        out["spg"] = scan_for(["steals per game", "spg"]) or scan_for(["stl"])
+        out["bpg"] = scan_for(["blocks per game", "bpg"]) or scan_for(["blk"])
+        out["tpg"] = scan_for(["turnovers per game", "tpg"]) or scan_for(["to"])
+        out["3pm"] = scan_for(["3-pointers made per game", "3pm"]) or scan_for(["3pm", "3ptm"])
+        # These are harder; we leave as None if not found
+        out["fgm"] = scan_for(["field goals made per game", "fgm"])
+        out["ftm"] = scan_for(["free throws made per game", "ftm"])
+
     else:
-        base = 0.0
+        out["pass_yds"] = scan_for(["passing yards", "py"]) or scan_for(["pass yds"])
+        out["pass_td"] = scan_for(["passing touchdowns", "ptd"])
+        out["int"] = scan_for(["interceptions", "int"])
+        out["rush_yds"] = scan_for(["rushing yards", "ry"]) or scan_for(["rush yds"])
+        out["rush_td"] = scan_for(["rushing touchdowns", "rtd"])
+        out["rec"] = scan_for(["receptions", "rec"])
+        out["rec_yds"] = scan_for(["receiving yards", "recy"]) or scan_for(["rec yds"])
+        out["rec_td"] = scan_for(["receiving touchdowns", "rectd"])
 
-    mult = 1.0
+    return out
 
-    # Pace (small but meaningful)
-    mult *= clamp(pace, 0.92, 1.10)
+def get_player_stats(league: str, athlete_id: str, force_refresh: bool = False) -> dict:
+    """
+    Cached by date + athlete_id.
+    """
+    ensure_cache_dir()
+    cache = load_json(PLAYER_STATS_CACHE)
+    today = dt.now(timezone.utc).strftime("%Y-%m-%d")
+    key = f"{league}:{today}:{athlete_id}"
 
-    # Usage & efficiency nudges (do not explode)
-    mult *= clamp(0.94 + (usage - 25.0) * 0.008, 0.88, 1.12)
-    mult *= clamp(0.96 + (eff - 0.58) * 0.60, 0.90, 1.10)
+    if not force_refresh and key in cache:
+        return cache[key]
 
-    # Rest / B2B / load management
-    mult *= clamp(0.98 + 0.015 * rest, 0.96, 1.06)
-    if b2b:
-        mult *= 0.96
-    if load:
-        mult *= 0.93
+    try:
+        profile = fetch_athlete_profile(league, athlete_id)
+        bundle = extract_stat_bundle_from_profile(league, profile)
+    except Exception:
+        bundle = {}
 
-    # Home/Away split baked in
-    mult *= clamp(ha, 0.94, 1.08)
+    cache[key] = bundle
+    save_json(PLAYER_STATS_CACHE, cache)
+    return bundle
 
-    # Injuries: treat as volume bump
-    # (Counts are already from ESPN, so they’re consistent day-to-day)
-    team_inj = float(ctx.get("team_inj_count", 0))
-    opp_inj = float(ctx.get("opp_inj_count", 0))
-    mult *= clamp(1.0 + team_inj * 0.010, 0.98, 1.08)
-    mult *= clamp(1.0 + opp_inj * 0.006, 0.98, 1.06)
+# =============================================================================
+# PROJECTION + EDGE SCORING (OVER/UNDER)
+# =============================================================================
 
-    # Favorite vs underdog usage change (small)
-    if ctx.get("is_favorite") is True:
-        mult *= 0.995
-    elif ctx.get("is_favorite") is False:
-        mult *= 1.010
+def build_context(spread_abs: Optional[float], total_pts: Optional[float], league: str) -> dict:
+    """
+    Adds game-script-ish modifiers.
+    """
+    ctx = {
+        "spread_abs": spread_abs,
+        "total": total_pts,
+    }
 
-    # Blowout risk: if spread big, stars lose late minutes
-    spread_abs = ctx.get("spread_abs")
-    if isinstance(spread_abs, (int, float)):
+    # Blowout risk bucket
+    if spread_abs is None:
+        ctx["blowout_risk"] = 0.0
+    else:
         if spread_abs >= 14:
-            mult *= 0.95
+            ctx["blowout_risk"] = 0.9
         elif spread_abs >= 10:
-            mult *= 0.97
+            ctx["blowout_risk"] = 0.6
         elif spread_abs >= 7:
-            mult *= 0.985
+            ctx["blowout_risk"] = 0.35
+        else:
+            ctx["blowout_risk"] = 0.15
 
-    # Referee FT boost: mostly helps points/FT/FG
-    if prop_type in ("points", "free_throws", "field_goals"):
-        ft_boost = float(REFEREE_TENDENCIES["nba"].get("ft_rate_boost", 1.0))
-        mult *= clamp(1.0 + (ft_boost - 1.0) * 0.35, 0.98, 1.05)
+    # NFL script: if total low + spread high => more run / less pass
+    if league == "nfl":
+        if total_pts is not None and spread_abs is not None:
+            if total_pts <= 41 and spread_abs >= 7:
+                ctx["script_run_heavy"] = 0.7
+            elif total_pts >= 50:
+                ctx["script_pass_heavy"] = 0.6
+            else:
+                ctx["script_run_heavy"] = 0.25
+                ctx["script_pass_heavy"] = 0.25
+        else:
+            ctx["script_run_heavy"] = 0.25
+            ctx["script_pass_heavy"] = 0.25
 
-    return base * mult
+    return ctx
 
-def edge_score_from_projection(proj: float, line: float, prop_type: str, ctx: dict) -> Tuple[float, str, dict]:
+def projection_from_stats(league: str, prop_type: str, stats: dict) -> Optional[float]:
     """
-    Returns (score 0-100, side 'over'|'under', breakdown dict)
+    Uses ESPN season averages as baseline (free + stable).
+    If missing, returns None.
     """
-    breakdown = {}
+    if league == "nba":
+        ppg = stats.get("ppg")
+        rpg = stats.get("rpg")
+        apg = stats.get("apg")
+        spg = stats.get("spg")
+        bpg = stats.get("bpg")
+        tpg = stats.get("tpg")
+        threes = stats.get("3pm")
+        fgm = stats.get("fgm")
+        ftm = stats.get("ftm")
+
+        if prop_type == "points":
+            return ppg
+        if prop_type == "rebounds":
+            return rpg
+        if prop_type == "assists":
+            return apg
+        if prop_type == "steals":
+            return spg
+        if prop_type == "blocks":
+            return bpg
+        if prop_type == "turnovers":
+            return tpg
+        if prop_type == "3_pointers":
+            return threes
+        if prop_type == "field_goals":
+            return fgm
+        if prop_type == "free_throws":
+            return ftm
+        if prop_type == "pts_reb":
+            return (ppg or 0) + (rpg or 0) if (ppg is not None or rpg is not None) else None
+        if prop_type == "pts_ast":
+            return (ppg or 0) + (apg or 0) if (ppg is not None or apg is not None) else None
+        if prop_type == "reb_ast":
+            return (rpg or 0) + (apg or 0) if (rpg is not None or apg is not None) else None
+        if prop_type == "pts_reb_ast":
+            return (ppg or 0) + (rpg or 0) + (apg or 0) if (ppg is not None or rpg is not None or apg is not None) else None
+
+    else:
+        pass_yds = stats.get("pass_yds")
+        pass_td = stats.get("pass_td")
+        ints = stats.get("int")
+        rush_yds = stats.get("rush_yds")
+        rush_td = stats.get("rush_td")
+        rec = stats.get("rec")
+        rec_yds = stats.get("rec_yds")
+        rec_td = stats.get("rec_td")
+
+        if prop_type == "pass_yards":
+            return pass_yds
+        if prop_type == "pass_td":
+            return pass_td
+        if prop_type == "int":
+            return ints
+        if prop_type == "rush_yards":
+            return rush_yds
+        if prop_type == "rush_td":
+            return rush_td
+        if prop_type == "receptions":
+            return rec
+        if prop_type == "rec_yards":
+            return rec_yds
+        if prop_type == "rec_td":
+            return rec_td
+
+    return None
+
+def apply_script_adjustments(league: str, prop_type: str, proj: float, ctx: dict) -> Tuple[float, dict]:
+    """
+    Adds blowout/script/garbage-time adjustments.
+    Returns adjusted projection and breakdown.
+    """
+    b = {}
+    blowout = float(ctx.get("blowout_risk", 0.0))
+
+    # Blowout: stars may sit -> slight UNDER pressure on volume stats
+    if blowout > 0:
+        if prop_type in ("points", "rebounds", "assists", "pts_reb", "pts_ast", "reb_ast", "pts_reb_ast",
+                         "pass_yards", "rush_yards", "receptions", "rec_yards"):
+            mult = 1.0 - 0.05 * blowout
+            proj *= mult
+            b["Blowout Risk Mult"] = round(mult, 3)
+
+    # Garbage time: can inflate bench / deflate stars depending on type
+    # We keep it modest since we don't know starter/bench automatically.
+    if blowout >= 0.6:
+        if prop_type in ("turnovers", "steals", "blocks"):
+            # volatility props can spike late
+            mult = 1.0 + 0.02
+            proj *= mult
+            b["Garbage Volatility"] = +0.02
+
+    if league == "nfl":
+        run_heavy = float(ctx.get("script_run_heavy", 0.25))
+        pass_heavy = float(ctx.get("script_pass_heavy", 0.25))
+
+        if prop_type in ("pass_yards",):
+            mult = 1.0 - 0.06 * run_heavy + 0.04 * pass_heavy
+            proj *= mult
+            b["NFL Script PassYds"] = round(mult, 3)
+
+        if prop_type in ("rush_yards",):
+            mult = 1.0 + 0.05 * run_heavy - 0.02 * pass_heavy
+            proj *= mult
+            b["NFL Script RushYds"] = round(mult, 3)
+
+        if prop_type in ("receptions", "rec_yards"):
+            mult = 1.0 + 0.03 * pass_heavy - 0.02 * run_heavy
+            proj *= mult
+            b["NFL Script Rec"] = round(mult, 3)
+
+    return proj, b
+
+def compute_edge(proj: float, line: float, prop_type: str, extra_breakdown: dict) -> Tuple[float, str, dict]:
+    """
+    Returns (edge_score 0-100, side over/under, breakdown dict)
+    """
+    breakdown = dict(extra_breakdown)
+
     if line <= 0:
         return 0.0, "over", breakdown
 
-    delta = proj - line  # + means over lean
-    # deadzone so we don't force picks on tiny differences
-    dead = 0.25 if prop_type in ("steals", "blocks") else 0.50
+    delta = proj - line
+    dead = 0.25 if prop_type in ("steals", "blocks", "int", "rush_td", "pass_td", "rec_td") else 0.50
+    breakdown["Model Δ"] = round(delta, 3)
 
     if abs(delta) < dead:
-        breakdown["Model Δ vs Line"] = delta
         return 0.0, "over", breakdown
 
     side = "over" if delta > 0 else "under"
 
-    # Convert delta into a base score shape
-    # scale by line size (bigger lines need bigger edge)
     scale = max(1.5, line * 0.08)
-    base = 50 + 45 * (2 * sigmoid(delta / scale) - 1)  # ~5..95
+    base = 50 + 45 * (2 * sigmoid(delta / scale) - 1)
 
-    breakdown["Model Δ vs Line"] = delta
-    breakdown["Scaled Edge"] = (delta / scale)
-
-    # Context bonuses/penalties (small)
-    spread_abs = ctx.get("spread_abs")
-    if isinstance(spread_abs, (int, float)):
-        if spread_abs >= 14:
-            base -= 6
-            breakdown["Blowout Risk"] = -6
-        elif spread_abs >= 10:
-            base -= 4
-            breakdown["Blowout Risk"] = -4
-        elif spread_abs >= 7:
-            base -= 2
-            breakdown["Blowout Risk"] = -2
-
-    # Underdog slight upside (more minutes, more “need”)
-    if ctx.get("is_favorite") is False:
-        base += 1.5
-        breakdown["Underdog Usage"] = +1.5
-
-    # Team injuries can push usage upward; opponent injuries can soften defense
-    base += clamp(float(ctx.get("team_inj_count", 0)) * 0.7, 0, 4)
-    breakdown["Teammate Inj Boost"] = clamp(float(ctx.get("team_inj_count", 0)) * 0.7, 0, 4)
-
-    base += clamp(float(ctx.get("opp_inj_count", 0)) * 0.4, 0, 3)
-    breakdown["Opp Inj Boost"] = clamp(float(ctx.get("opp_inj_count", 0)) * 0.4, 0, 3)
+    # Extra small confidence bump when delta is large
+    base += clamp(abs(delta) / max(1.0, scale) * 2.0, 0, 6)
 
     score = clamp(base, 0, 100)
+    breakdown["Scaled"] = round(delta / scale, 3)
+    breakdown["EdgeScore"] = round(score, 2)
     return score, side, breakdown
 
-
 # =============================================================================
-# TEAM + GAME CONTEXT BUILDING
-# =============================================================================
-
-def build_game_context(
-    league: str,
-    g: dict,
-    espn_team_map: dict,
-    injury_details: dict,
-    main_lines: dict | None
-) -> dict:
-    """
-    Builds a context dict with:
-    - ESPN abbr for injuries/team counts
-    - normalized defense abbr for OPPONENT_DEFENSE
-    - spread_abs and favorite flag (if we have spreads)
-    """
-    league_key = "nba" if league == "nba" else "nfl"
-
-    home_disp = resolve_espn_display_name(league_key, g["home_team"], espn_team_map)
-    away_disp = resolve_espn_display_name(league_key, g["away_team"], espn_team_map)
-
-    home_abbr_espn = espn_team_map.get(home_disp, {}).get("abbr", "")
-    away_abbr_espn = espn_team_map.get(away_disp, {}).get("abbr", "")
-
-    # injury counts by ESPN abbr
-    team_inj_counts = {}
-    for nm, (_status, team_abbr, _raw) in injury_details.items():
-        team_inj_counts[team_abbr] = team_inj_counts.get(team_abbr, 0) + 1
-
-    # normalized for defense
-    home_abbr_def = normalize_team_abbr(league_key, home_abbr_espn)
-    away_abbr_def = normalize_team_abbr(league_key, away_abbr_espn)
-
-    # spread handling (optional)
-    spread_abs = None
-    is_home_fav = None
-    if main_lines:
-        # main_lines may not include spreads; we’ll compute in scorer if possible
-        spread_abs = main_lines.get("spread_abs")
-        is_home_fav = main_lines.get("home_fav")
-
-    return {
-        "home_abbr_espn": home_abbr_espn,
-        "away_abbr_espn": away_abbr_espn,
-        "home_abbr_def": home_abbr_def,
-        "away_abbr_def": away_abbr_def,
-        "team_inj_counts": team_inj_counts,
-        "spread_abs": spread_abs,
-        "home_is_fav": is_home_fav,
-    }
-
-def choose_team_context_for_player(
-    league: str,
-    player_name: str,
-    g: dict,
-    game_ctx: dict
-) -> dict:
-    """
-    We don't have roster/team per player from Odds API, so we choose:
-    - If player exists in your player_db and you later extend to player->team, use that.
-    - For now: treat as neutral and use opponent based on "home vs away" unknown.
-    This keeps the system working without mis-assigning players to the wrong team.
-    """
-    # If you later add player->team mapping, you would set these properly.
-    # For now we evaluate matchup effects using BOTH sides lightly by picking the weaker/more neutral approach.
-    # We'll assume "opponent" is the home team defense when evaluating (conservative).
-    league_key = "nba" if league == "nba" else "nfl"
-    return {
-        "team_abbr_espn": game_ctx["away_abbr_espn"],
-        "opponent_abbr_espn": game_ctx["home_abbr_espn"],
-        "team_abbr_def": game_ctx["away_abbr_def"],
-        "opponent_abbr_def": game_ctx["home_abbr_def"],
-        "team_inj_count": float(game_ctx["team_inj_counts"].get(game_ctx["away_abbr_espn"], 0)),
-        "opp_inj_count": float(game_ctx["team_inj_counts"].get(game_ctx["home_abbr_espn"], 0)),
-        "spread_abs": game_ctx.get("spread_abs"),
-        "is_favorite": None if game_ctx.get("home_is_fav") is None else (not game_ctx["home_is_fav"]),
-    }
-
-
-# =============================================================================
-# TOP PICKS GENERATION
+# PIPELINE: BUILD PICKS (ALL PLAYERS IN ODDS FEED)
 # =============================================================================
 
-def generate_top_props_for_league(league: str, injured_norm: set[str], injury_details: dict) -> list[dict]:
+def generate_picks_for_league(league: str, top_n: int = 12) -> list[dict]:
+    """
+    1) Get events from Odds API
+    2) For each event, pull player props
+    3) For each player in props:
+       - injury filter (ESPN)
+       - map to ESPN athlete id (roster index)
+       - pull stats (ESPN)
+       - compute projection + edge for over/under
+    """
     if league == "nba":
         sport_key = NBA_SPORT_KEY
         markets = NBA_MARKETS
         market_to_prop = NBA_MARKET_TO_PROP
-        player_db = NBA_PLAYERS_DATA
-        keep_top = 8
-        league_key = "nba"
     else:
         sport_key = NFL_SPORT_KEY
         markets = NFL_MARKETS
         market_to_prop = NFL_MARKET_TO_PROP
-        player_db = NFL_PLAYERS_DATA
-        keep_top = 8
-        league_key = "nfl"
 
-    espn_team_map = fetch_espn_team_map(league_key)
+    # Build player index + injuries once per run (cached by day)
+    player_index = build_player_index(league)
+    injured_set, injured_details = build_injury_set(league)
 
     events = oddsapi_get_events(sport_key)
     games = build_games_from_events(events)
@@ -666,50 +733,18 @@ def generate_top_props_for_league(league: str, injured_norm: set[str], injury_de
         if not event_id:
             continue
 
-        # Optional main lines for blowout/script logic
-        main_lines = {"spread_abs": None, "home_fav": None}
+        # Spread/total context (optional)
+        spread_abs = None
+        total_pts = None
         try:
             main_odds = oddsapi_get_event_odds(sport_key, event_id, MAIN_LINE_MARKETS)
-            # We’ll try to infer spread_abs/home_fav from spreads market if present
-            # (Odds API spread outcomes are team names with point values)
-            home = g["home_team"]
-            away = g["away_team"]
-            home_spread = None
-            away_spread = None
-
-            for bm in main_odds.get("bookmakers", []) or []:
-                for m in bm.get("markets", []) or []:
-                    if m.get("key") != "spreads":
-                        continue
-                    for o in m.get("outcomes", []) or []:
-                        name = o.get("name")
-                        point = o.get("point")
-                        if point is None:
-                            continue
-                        try:
-                            point = float(point)
-                        except Exception:
-                            continue
-                        if name == home:
-                            home_spread = point
-                        elif name == away:
-                            away_spread = point
-                if home_spread is not None or away_spread is not None:
-                    break
-
-            if home_spread is not None:
-                main_lines["spread_abs"] = abs(home_spread)
-                main_lines["home_fav"] = (home_spread < 0)
-            elif away_spread is not None:
-                main_lines["spread_abs"] = abs(away_spread)
-                # if away spread is negative, away favored -> home_fav False
-                main_lines["home_fav"] = not (away_spread < 0)
-
+            spread_abs, total_pts = parse_spread_total(main_odds, g["home_team"], g["away_team"])
         except Exception:
             pass
 
-        game_ctx = build_game_context(league_key, g, espn_team_map, injury_details, main_lines)
+        ctx = build_context(spread_abs, total_pts, league)
 
+        # Player props odds
         try:
             odds = oddsapi_get_event_odds(sport_key, event_id, markets)
         except Exception:
@@ -719,301 +754,192 @@ def generate_top_props_for_league(league: str, injured_norm: set[str], injury_de
 
         for row in prop_rows:
             market = row["market"]
-            player = row["player"]
+            raw_player = row["player"]
             line = row["line"]
 
             prop_type = market_to_prop.get(market)
             if not prop_type:
                 continue
 
-            # Injury filter (normalized)
-            if normalize_player_name(player) in injured_norm:
+            nm = normalize_player_name(raw_player)
+
+            # injury filter
+            if nm in injured_set:
                 continue
 
-            # Context (team/opponent/abbr) — neutral if we don’t know player team
-            ctx = choose_team_context_for_player(league_key, player, g, game_ctx)
+            # map to ESPN athlete id via roster index
+            info = player_index.get(nm)
+            if not info:
+                # If name doesn't match roster spelling exactly, skip (or add fuzzy later)
+                continue
 
-            # Projection
-            pdata = player_db.get(player, {})
-            if league_key == "nba":
-                proj = nba_projection(pdata, prop_type, ctx) if pdata else line  # fallback: neutral
-            else:
-                # NFL fallback: neutral unless you extend it like nba_projection
-                proj = line
+            athlete_id = info["id"]
+            stats = get_player_stats(league, athlete_id)
 
-            score, side, breakdown = edge_score_from_projection(proj, line, prop_type, ctx)
+            base_proj = projection_from_stats(league, prop_type, stats)
+            if base_proj is None:
+                continue
 
-            # Keep only meaningful edges
+            proj, add_breakdown = apply_script_adjustments(league, prop_type, float(base_proj), ctx)
+            score, side, breakdown = compute_edge(proj, float(line), prop_type, add_breakdown)
+
+            # keep only meaningful edges
             if score < 62:
                 continue
 
             picks.append({
-                "player": player,
+                "player": info["name"],
                 "prop_type": prop_type,
-                "line": line,
+                "line": float(line),
                 "side": side,
-                "proj": proj,
-                "edge_score": score,
+                "proj": float(proj),
+                "edge_score": float(score),
                 "matchup": g["matchup"],
                 "time": g["time"],
                 "breakdown": breakdown,
             })
 
     picks.sort(key=lambda x: x["edge_score"], reverse=True)
-    return picks[:keep_top]
-
+    return picks[:top_n]
 
 # =============================================================================
-# HTML GENERATION
+# HTML OUTPUT
 # =============================================================================
 
 def generate_factor_html(breakdown: dict) -> str:
+    items = list(breakdown.items())
+    # Show a few helpful breakdown fields
+    show = []
+    for k, v in items:
+        if k in ("EdgeScore",):
+            continue
+        show.append((k, v))
+    show = show[:6]
+
     html = '<div class="factor-breakdown">'
-    sorted_factors = sorted(breakdown.items(), key=lambda x: float(x[1]) if isinstance(x[1], (int, float)) else 0, reverse=True)[:6]
-
-    for name, val in sorted_factors:
+    for name, val in show:
         try:
-            score = float(val)
+            vv = float(val) if isinstance(val, (int, float, str)) else 0.0
         except Exception:
-            score = 0.0
+            vv = 0.0
 
-        # convert to a 0-100-ish bar
-        norm = int(clamp(50 + score * 12, 0, 100))
-
+        # normalize display 0-100
+        norm = int(clamp(50 + vv * 10, 0, 100))
         if norm >= 75:
-            gradient = "linear-gradient(90deg, #00ff88, #00cc66)"
+            grad = "linear-gradient(90deg, #00ff88, #00cc66)"
         elif norm >= 50:
-            gradient = "linear-gradient(90deg, #00d4ff, #0099ff)"
+            grad = "linear-gradient(90deg, #00d4ff, #0099ff)"
         else:
-            gradient = "linear-gradient(90deg, #ffaa00, #ff8800)"
+            grad = "linear-gradient(90deg, #ffaa00, #ff8800)"
 
         html += f"""
-            <div class="factor-item">
-                <div class="factor-name">{name}</div>
-                <div class="factor-score-bar">
-                    <div class="factor-score-fill" style="width:{norm}%; background:{gradient};">{norm}</div>
-                </div>
-            </div>
+        <div class="factor-item">
+          <div class="factor-name">{name}</div>
+          <div class="factor-score-bar">
+            <div class="factor-score-fill" style="width:{norm}%; background:{grad};">{norm}</div>
+          </div>
+        </div>
         """
-
     html += "</div>"
     return html
 
-def generate_prediction_card(prop: dict) -> str:
-    edge = float(prop["edge_score"])
-    confidence_color = "high" if edge >= 80 else ("medium" if edge >= 70 else "low")
-    confidence_text = f"{int(edge)}% EDGE"
-
-    prop_display = f"{prop['player']} {prop['prop_type'].replace('_',' ').title()} {prop['side'].title()} {prop['line']}"
+def generate_prediction_card(p: dict) -> str:
+    edge = float(p["edge_score"])
+    conf = "high" if edge >= 80 else ("medium" if edge >= 70 else "low")
+    badge = f"{int(edge)}% EDGE"
+    title = f"{p['player']} {p['prop_type'].replace('_',' ').title()} {p['side'].title()} {p['line']}"
+    subtitle = f"{p['matchup']} | {p['time']} | Proj: {p['proj']:.2f}"
 
     return f"""
-        <div class="prediction-card {confidence_color}-confidence">
-            <div class="prediction-header">
-                <div>
-                    <div class="prediction-title">{prop_display}</div>
-                    <div style="color: var(--color-text-secondary); font-size: 0.9em; margin-top: 5px;">
-                        {prop['matchup']} | {prop['time']} | Model proj: {prop['proj']:.2f}
-                    </div>
-                </div>
-                <div class="confidence-badge {confidence_color}">{confidence_text}</div>
-            </div>
-
-            {generate_factor_html(prop['breakdown'])}
-
-            <div class="ai-reasoning">
-                <strong>📊 Real Line + Model Edge:</strong>
-                Side (Over/Under) chosen from model projection vs real line, then adjusted by context:
-                pace, usage, efficiency, rest/B2B, injuries, favorite/underdog, and blowout risk (when spreads available).
-            </div>
-
-            <span class="risk-indicator {'low' if confidence_color == 'high' else 'medium'}-risk">Edge-based selection</span>
+    <div class="prediction-card {conf}-confidence">
+      <div class="prediction-header">
+        <div>
+          <div class="prediction-title">{title}</div>
+          <div style="color: var(--color-text-secondary); font-size: 0.9em; margin-top: 5px;">{subtitle}</div>
         </div>
+        <div class="confidence-badge {conf}">{badge}</div>
+      </div>
+      {generate_factor_html(p['breakdown'])}
+      <div class="ai-reasoning">
+        <strong>Model logic:</strong> ESPN season averages → script adjustment (blowout / NFL run-pass) → edge vs line.
+        Shows Over/Under based on projection difference.
+      </div>
+    </div>
     """
 
-def generate_html(nba_props: list[dict], nfl_props: list[dict]) -> str:
+def generate_html(nba_picks: list[dict], nfl_picks: list[dict]) -> str:
     now = dt.now().astimezone()
-    today_date = now.strftime("%B %d, %Y")
-    last_updated = now.strftime("%B %d, %Y at %I:%M %p %Z")
+    today = now.strftime("%B %d, %Y")
+    updated = now.strftime("%B %d, %Y at %I:%M %p %Z")
 
-    nba_cards = "".join(generate_prediction_card(p) for p in nba_props) if nba_props else '<p style="color: var(--color-text-secondary);">No high-edge NBA props identified today.</p>'
-    nfl_cards = "".join(generate_prediction_card(p) for p in nfl_props) if nfl_props else '<p style="color: var(--color-text-secondary);">No high-edge NFL props identified today.</p>'
+    nba_cards = "".join(generate_prediction_card(p) for p in nba_picks) if nba_picks else '<p style="color:#cbd5e1;">No high-edge NBA props found.</p>'
+    nfl_cards = "".join(generate_prediction_card(p) for p in nfl_picks) if nfl_picks else '<p style="color:#cbd5e1;">No high-edge NFL props found.</p>'
 
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Advanced Prop Dashboard</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Prop Scouting Dashboard</title>
 <style>
 :root {{
-  --color-bg: #0a0e27;
-  --color-surface: #1a1f3a;
-  --color-border: #2d3748;
-  --color-text: #f1f5f9;
-  --color-text-secondary: #cbd5e1;
-  --shadow: 0 4px 12px rgba(0,0,0,0.5);
+  --color-bg:#0a0e27; --color-surface:#1a1f3a; --color-border:#2d3748;
+  --color-text:#f1f5f9; --color-text-secondary:#cbd5e1;
 }}
-* {{ box-sizing: border-box; margin:0; padding:0; }}
-body {{
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: linear-gradient(135deg, var(--color-bg) 0%, #0f1729 100%);
-  color: var(--color-text);
-  padding: 20px;
-  min-height: 100vh;
-}}
-.header {{ text-align:center; margin-bottom:30px; border-bottom: 2px solid var(--color-border); padding-bottom: 16px; }}
-.header h1 {{
-  font-size: 2.2em;
-  margin-bottom: 8px;
-  background: linear-gradient(135deg, #00d4ff, #0099ff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}}
-.header p {{ color: var(--color-text-secondary); }}
-.container {{ max-width: 1400px; margin:0 auto; }}
-.controls-section {{
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 20px;
-  box-shadow: var(--shadow);
-}}
-.league-tabs {{ display:flex; gap:10px; flex-wrap:wrap; }}
-.league-tab {{
-  padding: 10px 16px;
-  border: 2px solid var(--color-border);
-  background: transparent;
-  color: var(--color-text);
-  cursor:pointer;
-  border-radius: 8px;
-  font-weight: 700;
-}}
-.league-tab.active {{
-  background: linear-gradient(135deg, #00d4ff, #0099ff);
-  border-color: #00d4ff;
-  color: #000;
-}}
-.league-content {{ display:none; }}
-.league-content.active {{ display:block; }}
-
-.prediction-card {{
-  background: var(--color-surface);
-  border: 2px solid var(--color-border);
-  border-radius: 12px;
-  padding: 18px;
-  margin-bottom: 16px;
-  transition: all 0.2s ease;
-}}
-.prediction-card:hover {{
-  border-color: #00d4ff;
-  box-shadow: 0 8px 24px rgba(0, 212, 255, 0.1);
-  transform: translateY(-1px);
-}}
-.prediction-card.high-confidence {{ border-left: 5px solid #00ff88; }}
-.prediction-card.medium-confidence {{ border-left: 5px solid #ffaa00; }}
-.prediction-card.low-confidence {{ border-left: 5px solid #ff6b6b; }}
-
-.prediction-header {{ display:flex; justify-content:space-between; gap:12px; }}
-.prediction-title {{ font-size: 1.15em; font-weight: 800; }}
-
-.confidence-badge {{
-  padding: 8px 14px;
-  border-radius: 20px;
-  font-size: 0.9em;
-  font-weight: 800;
-  color: #fff;
-  white-space: nowrap;
-}}
-.confidence-badge.high {{ background: linear-gradient(135deg, #00ff88, #00cc66); }}
-.confidence-badge.medium {{ background: linear-gradient(135deg, #ffaa00, #ff8800); }}
-.confidence-badge.low {{ background: linear-gradient(135deg, #ff6b6b, #cc0000); }}
-
-.factor-breakdown {{
-  display:grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 10px;
-  margin: 14px 0;
-}}
-.factor-item {{
-  background: rgba(0, 212, 255, 0.05);
-  border: 1px solid rgba(0, 212, 255, 0.2);
-  padding: 10px;
-  border-radius: 8px;
-}}
-.factor-name {{
-  font-size: 0.8em;
-  font-weight: 700;
-  color: #00d4ff;
-  text-transform: uppercase;
-  margin-bottom: 6px;
-}}
-.factor-score-bar {{
-  background: rgba(0,0,0,0.3);
-  height: 18px;
-  border-radius: 4px;
-  overflow:hidden;
-}}
-.factor-score-fill {{
-  height:100%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size: 0.75em;
-  font-weight: 900;
-  color: #000;
-}}
-.ai-reasoning {{
-  background: rgba(0, 212, 255, 0.05);
-  border-left: 3px solid #00d4ff;
-  padding: 10px;
-  border-radius: 8px;
-  margin-top: 10px;
-  color: var(--color-text-secondary);
-  line-height: 1.45;
-}}
-.risk-indicator {{
-  display:inline-block;
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-size: 0.85em;
-  font-weight: 700;
-  margin-top: 10px;
-  background: rgba(0, 255, 136, 0.12);
-  color: #00ff88;
-}}
-
-@media (max-width: 768px) {{
-  .prediction-header {{ flex-direction: column; }}
-}}
+*{{margin:0;padding:0;box-sizing:border-box}}
+body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+background:linear-gradient(135deg,var(--color-bg) 0%, #0f1729 100%);
+color:var(--color-text); padding:20px;}}
+.header{{text-align:center;margin-bottom:18px;border-bottom:2px solid var(--color-border);padding-bottom:14px;}}
+.header h1{{font-size:2.2em;margin-bottom:6px;background:linear-gradient(135deg,#00d4ff,#0099ff);
+-webkit-background-clip:text;-webkit-text-fill-color:transparent;}}
+.header p{{color:var(--color-text-secondary)}}
+.container{{max-width:1400px;margin:0 auto}}
+.league-tabs{{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:12px 0 18px;}}
+.league-tab{{padding:10px 18px;border:2px solid var(--color-border);background:transparent;color:var(--color-text);
+border-radius:10px;cursor:pointer;font-weight:800;}}
+.league-tab.active{{background:linear-gradient(135deg,#00d4ff,#0099ff);border-color:#00d4ff;color:#000}}
+.league-content{{display:none}}
+.league-content.active{{display:block}}
+.prediction-card{{background:var(--color-surface);border:2px solid var(--color-border);border-radius:12px;padding:16px;margin-bottom:14px;}}
+.prediction-header{{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;}}
+.prediction-title{{font-size:1.1em;font-weight:900}}
+.confidence-badge{{padding:8px 14px;border-radius:999px;font-weight:900;color:#fff;white-space:nowrap}}
+.confidence-badge.high{{background:linear-gradient(135deg,#00ff88,#00cc66)}}
+.confidence-badge.medium{{background:linear-gradient(135deg,#ffaa00,#ff8800)}}
+.confidence-badge.low{{background:linear-gradient(135deg,#ff6b6b,#cc0000)}}
+.factor-breakdown{{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin:14px 0;}}
+.factor-item{{background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.2);padding:10px;border-radius:10px}}
+.factor-name{{font-size:0.8em;font-weight:800;color:#00d4ff;text-transform:uppercase;margin-bottom:6px}}
+.factor-score-bar{{background:rgba(0,0,0,0.3);height:18px;border-radius:4px;overflow:hidden}}
+.factor-score-fill{{height:100%;display:flex;align-items:center;justify-content:center;font-size:0.75em;font-weight:900;color:#000}}
+.ai-reasoning{{background:rgba(0,212,255,0.05);border-left:3px solid #00d4ff;padding:10px;border-radius:10px;color:var(--color-text-secondary);line-height:1.45}}
 </style>
 </head>
 <body>
   <div class="header">
-    <h1>Advanced Prop Scouting Dashboard</h1>
-    <p>{today_date} • NBA picks: {len(nba_props)} • NFL picks: {len(nfl_props)}</p>
-    <p style="margin-top:6px; font-size:0.95em;">Last updated: {last_updated}</p>
+    <h1>Automated Prop Scouting Dashboard</h1>
+    <p>{today} • NBA picks: {len(nba_picks)} • NFL picks: {len(nfl_picks)}</p>
+    <p style="margin-top:6px;font-size:0.95em;">Last updated: {updated}</p>
+
+    <div class="league-tabs">
+      <button class="league-tab active" data-league="nba">🏀 NBA</button>
+      <button class="league-tab" data-league="nfl">🏈 NFL</button>
+    </div>
   </div>
 
   <div class="container">
-    <div class="controls-section">
-      <div class="league-tabs">
-        <button class="league-tab active" data-league="nba">🏀 NBA</button>
-        <button class="league-tab" data-league="nfl">🏈 NFL</button>
-      </div>
-    </div>
-
     <div id="nba" class="league-content active">
-      <h2 style="margin: 10px 0 14px 0;">NBA Top Plays</h2>
+      <h2 style="margin: 10px 0 12px;">NBA Top Value Picks</h2>
       {nba_cards}
     </div>
 
     <div id="nfl" class="league-content">
-      <h2 style="margin: 10px 0 14px 0;">NFL Top Plays</h2>
+      <h2 style="margin: 10px 0 12px;">NFL Top Value Picks</h2>
       {nfl_cards}
     </div>
 
-    <div style="text-align:center; margin: 30px 0; color: var(--color-text-secondary); font-size: 0.9em;">
+    <div style="text-align:center;margin:26px 0;color:var(--color-text-secondary);font-size:0.9em;">
       <p>Disclaimer: informational only. Always do your own research.</p>
     </div>
   </div>
@@ -1038,25 +964,25 @@ document.querySelectorAll('.league-tab').forEach(tab => {{
 # =============================================================================
 
 def main():
+    ensure_cache_dir()
     print("🚀 Starting dashboard generation...")
-    print(f"⏰ Time: {dt.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}")
+    print(f"⏰ {dt.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}")
 
-    # injuries
-    nba_injured_norm, nba_injury_details = fetch_espn_injuries("nba")
-    nfl_injured_norm, nfl_injury_details = fetch_espn_injuries("nfl")
+    print("📌 Building ESPN indexes (players + injuries) ...")
+    # caches are built on-demand inside generate_picks_for_league
 
-    print(f"🩺 NBA injured count: {len(nba_injured_norm)}")
-    print(f"🩺 NFL injured count: {len(nfl_injured_norm)}")
+    print("🏀 Generating NBA picks from ALL players in odds feed ...")
+    nba_picks = generate_picks_for_league("nba", top_n=12)
 
-    nba_props = generate_top_props_for_league("nba", nba_injured_norm, nba_injury_details)
-    nfl_props = generate_top_props_for_league("nfl", nfl_injured_norm, nfl_injury_details)
+    print("🏈 Generating NFL picks from ALL players in odds feed ...")
+    nfl_picks = generate_picks_for_league("nfl", top_n=12)
 
-    html = generate_html(nba_props, nfl_props)
+    html = generate_html(nba_picks, nfl_picks)
     with open("AI_Prediction_Engine.html", "w", encoding="utf-8") as f:
         f.write(html)
 
     print("✅ Wrote AI_Prediction_Engine.html")
-    print(f"🏀 NBA picks: {len(nba_props)} | 🏈 NFL picks: {len(nfl_props)}")
+    print(f"NBA picks: {len(nba_picks)} | NFL picks: {len(nfl_picks)}")
 
 if __name__ == "__main__":
     main()
